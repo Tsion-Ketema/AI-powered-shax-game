@@ -10,6 +10,7 @@
 # ✘ Doesn’t handle UI/AI (that comes later).
 
 from game_logic.board import Board
+from game_logic.helpers import Player
 from game_logic.rules import Rules
 
 
@@ -17,12 +18,13 @@ class GameState:
     def __init__(self):
         """Manages the Shax game state, including turns, piece placement, and movement."""
         self.board = Board()
-        self.rules = Rules()
+        self.rules = Rules(self.board)
         self.players = ['Player 1', 'Player 2']
         self.current_phase = "placement"  # "placement" or "movement"
-        self.player_pieces = {'Player 1': 12, 'Player 2': 12}
-        self.current_player = "Player 1"
+        self.players = [Player("Player 1","green"), Player("Player 2","yellow")]
+        self.current_player = self.players[0]
         self.first_mill_player = None
+        self.mills = []
 
     def switch_turn(self):
         """Switches turns between players."""
@@ -49,3 +51,25 @@ class GameState:
                 self.switch_turn()
                 return "Piece placed"
             return "Invalid placement"
+
+    def place_piece(self, position, player):
+        """
+        Places a piece on the board at the specified position if it's empty.
+        :param position: The position index (0-23).
+        :param player: 'Player 1' or 'Player 2'.
+        :return: True if the piece was placed, False otherwise.
+        """
+        if position in self.positions and self.positions[position] is None:
+            self.positions[position] = player
+            return True
+        return False
+
+    def move_piece(self,from_pos,to_pos, player):
+        pass
+
+    def capture(self):
+        pass
+
+    def reset(self):
+        self.board = Board()
+        return True
