@@ -9,14 +9,8 @@
 
 
 class Rules:
-    def __init__(self):
-        """Defines valid mills and adjacency for movement."""
-        self.mills = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11],
-            [12, 13, 14], [15, 16, 17], [18, 19, 20], [21, 22, 23],
-            [0, 9, 21], [3, 10, 18], [6, 11, 15], [1, 4, 7],
-            [16, 19, 22], [8, 12, 17], [5, 13, 20], [2, 14, 23]
-        ]
+    def __init__(self, board):
+        self.board = board
 
     def check_mill(self, board, position, player):
         """
@@ -24,7 +18,7 @@ class Rules:
         """
         print(f"🔍 Checking mill for {player} at position {position}")
 
-        for mill in self.mills:
+        for mill in self.board.mills:
             if position in mill:
                 print(f"   ➡ Checking mill: {mill}")
                 occupied_positions = [board.positions[p] for p in mill]
