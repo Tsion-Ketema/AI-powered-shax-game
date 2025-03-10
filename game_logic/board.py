@@ -5,14 +5,37 @@ class Board:
         """
         self.positions = {pos: None for pos in range(24)}
 
-    def place_piece(self, position, player):
-        """
-        Places a piece on the board at the specified position if it's empty.
-        :param position: The position index (0-23).
-        :param player: 'Player 1' or 'Player 2'.
-        :return: True if the piece was placed, False otherwise.
-        """
-        if position in self.positions and self.positions[position] is None:
-            self.positions[position] = player
-            return True
-        return False
+        self.adjacency = {
+            0: [1, 9],
+            1: [0,4,2],
+            2: [1,14],
+            4: [3,7,5],
+            5: [4,13],
+            6: [7,11],
+            7: [6,8],
+            8: [7,12],
+            9: [0,10,21],
+            10: [3,9,11,18],
+            11: [6,15],
+            12: [8,17],
+            13: [5,12,14,20],
+            14: [2,13,23],
+            15: [11,16],
+            16: [15,19,17],
+            17: [12,16],
+            18: [10,19],
+            19: [16,18,20,22],
+            20: [13,19],
+            21: [9,22],
+            22: [19,21,23],
+            23: [14,22]
+        }
+        """Defines valid mills and adjacency for movement."""
+        self.mills = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11],
+            [12, 13, 14], [15, 16, 17], [18, 19, 20], [21, 22, 23],
+            [0, 9, 21], [3, 10, 18], [6, 11, 15], [1, 4, 7],
+            [16, 19, 22], [8, 12, 17], [5, 13, 20], [2, 14, 23]
+        ]
+
+
