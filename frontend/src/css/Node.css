@@ -1,0 +1,47 @@
+.node {
+  position: absolute;
+  cursor: pointer;
+}
+
+.node .empty {
+  width: 15px;
+  height: 15px;
+  background-color: #000000;
+  border-radius: 50%;
+}
+
+.node .player1 {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #b0e5a1, #78c45c); /* Soft gradient with the main color */
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), /* Outer shadow */
+              inset 2px 2px 4px rgba(0, 0, 0, 0.2), /* Inner shadow for depth */
+              inset -2px -2px 4px rgba(255, 255, 255, 0.2); /* Highlight */
+  transform: perspective(500px) rotateX(5deg) rotateY(5deg); /* Subtle 3D rotation */
+  display: inline-block;
+}
+
+.node .player2 {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ffd791, #f5a623); /* Soft gradient with warm orange */
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), /* Outer shadow */
+              inset 2px 2px 4px rgba(0, 0, 0, 0.2), /* Inner shadow for depth */
+              inset -2px -2px 4px rgba(255, 255, 255, 0.2); /* Highlight */
+  transform: perspective(500px) rotateX(5deg) rotateY(5deg); /* Subtle 3D rotation */
+  display: inline-block;
+}
+
+/* Highlight style */
+.highlight {
+  background-color: rgba(25, 173, 232, 0.962);
+  border: 3px solid red; /* Example to make the highlight stand out */
+}
+
+/* Selected node style */
+.selected {
+  border: 2px solid blue;  /* Example style for selected node */
+  box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);  /* Example glowing effect */
+}
