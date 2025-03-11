@@ -9,9 +9,9 @@
 # ✘ Doesn’t define rules (that’s Rules).
 # ✘ Doesn’t handle UI/AI (that comes later).
 
-from game_logic.board import Board
-from game_logic.helpers import Player
-from game_logic.rules import Rules
+from backend.game_logic.board import Board
+from backend.game_logic.helpers import Player
+from backend.game_logic.rules import Rules
 from helpers import Phase as phase
 
 
@@ -20,7 +20,6 @@ class GameState:
         """Manages the Shax game state, including turns, piece placement, and movement."""
         self.board = Board()
         self.rules = Rules(self.board)
-        self.players = ['Player 1', 'Player 2']
         self.current_phase = phase.PLACEMENT   # "placement" or "movement"
         self.players = [Player(1,"Player 1","green"), Player(2,"Player 2","yellow")]
         self.current_player = self.players[0]
@@ -111,4 +110,4 @@ class GameState:
         return pos_2 in self.board.adjacency[pos_1] and self.board.adjacency[pos_1] is None
 
     def get_game_state(self):
-        return self
+        return True,self

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 
 
-from game_logic.game_state import GameState
+from backend.game_logic.game_state import GameState
 
 app = Flask(__name__)
 
@@ -29,8 +29,9 @@ def get_moves():
 
 @app.route('/getGameState', methods=['GET'])
 def get_game_state():
-    result = game.get_game_state()
-    return jsonify({"status": result.status, "board": game.board})
+    status, result = game.get_game_state()
+    # return jsonify({"status": status, "board": jsonify(result.board)})
+    return jsonify({"status": status, "board": "it worked!!"})
 
 
 @app.route('/capture', methods=['POST'])

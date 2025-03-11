@@ -1,4 +1,4 @@
-from game_logic.board import Board  # Only testing board structure now
+from backend.game_logic.board import Board  # Only testing board structure now
 import sys
 import os
 

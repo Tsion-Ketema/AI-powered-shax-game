@@ -3,9 +3,7 @@ from enum import Enum
 
 class Mill:
     def __init__(self):
-        self.pos_one=None
-        self.pos_two=None
-        self.pos_three=None
+        self.mill_id=None
         self.player=None
         self.used=False
 
