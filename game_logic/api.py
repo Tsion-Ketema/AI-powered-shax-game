@@ -21,17 +21,29 @@ def move():
     return jsonify({"status": result.status, "board": game.board})
 
 
+@app.route('/getMoves', methods=['POST'])
+def get_moves():
+    move_request = request.json
+    result = game.get_valid_move_player(move_request.player)
+    return jsonify({"status": result.status, "board": game.board})
+
+@app.route('/getGameState', methods=['GET'])
+def get_game_state():
+    result = game.get_game_state()
+    return jsonify({"status": result.status, "board": game.board})
+
+
 @app.route('/capture', methods=['POST'])
 def capture():
     capture_request = request.json
-    result = game.move_piece(capture_request.mill, capture_request.pos, capture_request.player)
+    result = game.capture(capture_request.pos, capture_request.player)
     return jsonify({"status": result.status, "board": game.board})
 
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    game.reset()
-    pass
+    result = game.reset()
+    return jsonify({"status": True, "game": result})
 
 if __name__ == '__main__':
     app.run(debug=True)
