@@ -1,3 +1,13 @@
+# ✅ What it Does?
+# ✔ Defines valid positions
+# ✔ Holds where pieces are placed
+# ✔ Provides a way to access the board state
+
+# ❌ What it Does NOT Do?
+# ✘ No game rules (doesn’t know about mills, captures, or turns).
+# ✘ No AI logic (doesn’t decide moves).
+
+
 class Board:
     def __init__(self):
         """
