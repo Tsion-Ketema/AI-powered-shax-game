@@ -58,7 +58,7 @@ class Shaxboard extends React.Component {
             [0, 50],[16.66, 50],[33.33, 50],[66.66, 50],[83.33, 50],[100, 50],
             [33.33, 66.66],[50, 66.66],[66.66, 66.66],
             [16.66, 83.33],[50, 83.33],[83.33, 83.33],
-                [0, 100] , [50, 100] ,[100, 100]
+            [0, 100] , [50, 100] ,[100, 100]
 
         ];
         return { xPos: positions[index][0], yPos: positions[index][1] };
@@ -131,8 +131,8 @@ class Shaxboard extends React.Component {
 
             if (selectedNode === null) {
                 // First click - select piece or capture
-                if (board[nodeIndex].controllingPlayer !== 0)    {
-                    if (board[nodeIndex].controllingPlayer !== currentPlayer) {
+                if (board[nodeIndex].controllingPlayer !== 0 && board[nodeIndex].controllingPlayer !== currentPlayer)    {
+
                         console.log("Capturing by player "+ currentPlayer)
 
                         // Only allow capture if piece has no empty adjacent nodes
@@ -152,10 +152,11 @@ class Shaxboard extends React.Component {
                                 info: `Player ${nextPlayer}'s turn`,
                             },
                         });
-                    }
+
                 }else if (board[nodeIndex].controllingPlayer === currentPlayer) {
                     // Select own piece for movement
                     console.log("am clicking my own node. "+nodeIndex)
+
                     this.setState({
                         gameState: {
                             ...gameState,
