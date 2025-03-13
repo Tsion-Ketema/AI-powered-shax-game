@@ -1,6 +1,6 @@
 import React from 'react';
 import Shaxboard from './shax';
-import './App.css';
+import './css/App.css';
 
 function App() {
     return (
