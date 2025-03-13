@@ -1,0 +1,49 @@
+The game rule.
+
+There are two players lets label them player1, player2.
+Each of the players have 12 pieces of each.
+The shax board have 24 postion that each players places there pieces.
+mills-->3 similar pieces in a row.
+
+The  game have 4 phases eachh takes place in step (One after the other).
+1. Placement phases
+2. Opening phases
+3. Movement phase
+4. Capture phase
+
+1, Placement phase
+    This is the phase where the game starts, each players place there pieces turn by turn in the 24 postions.
+    During this time any of the player might form a mill.
+
+    Condtions
+        1. One of the player forms one or more mills.
+        2. Both player forms 1 or more mill.
+        3. None of the players forms a mill.
+Any good strategy to follow
+-
+-
+-
+-
+
+2. Opening phase
+In this phase both the players are allowed to take only one opponets piece turn by turn but the turn is made based on(the above constions on the placement phase.
+Here only one piece removal of the opponet is allowed plus it should have to be outside from the mill.
+   Condtions
+        1.If only one player forms a mill in placement phase , he is the one to remove his one opponet piece(which isn't part of the mill)and the second player removes the second piece of the opponet.
+        2 If both forms a mill the one that makes the first mill can start the opening phase (removal of the opponet) and the next player proceed.
+        3.If none of them forms a mill the one that start the placement phase second will start opening phase.
+Any good strategy to follow
+-
+-
+-
+-
+
+3. Movement phase
+So after the opening phase is completed from all 24 pieces only 22 pieces left for further Movement
+Condtions
+1. Players take turn moving the pieces only in adjecent postion.
+2. Diagonal moves and jumping is not allowed.
+3. If a player forms a mill they remove their opponets piece.
+4. If one of the player is blocked the opponet moves the his own pieces just to let him play (but can use this as an advantage for himself to make a mill only to help the opponet to give it a chance).its just to unblock
+5. If a player only with 3 pieces it can fly (move to empty postion instead of the adjust postion)
+6. The game ends when only 2 pieces are left
