@@ -31,3 +31,22 @@ class Rules:
 
         print("❌ No mill formed.")
         return False  # No valid mill found
+    """
+    checks: if the capture isn't taking from a mill
+    """
+    def capture_validity(self,position):
+
+        #incomplete method implementation
+        return self.check_available_mill(position)
+
+    """
+    checks: if there is a mill is available
+    """
+    def check_available_mill(self, position):
+        pass
+
+    """
+    checks: for potential mill either to form one or to block one
+    """
+    def check_potential_mill(self,board):
+        pass
