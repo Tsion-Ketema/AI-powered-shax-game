@@ -1,7 +1,7 @@
 import React from 'react';
-import './Shaxboard.css';
-import Node from './Node.jsx';
-import Popup from './Popup.jsx';
+import './css/Shaxboard.css';
+import Node from './components/Node.jsx';
+import Popup from './components/Popup.jsx';
 import { Helmet } from 'react-helmet';
 
 

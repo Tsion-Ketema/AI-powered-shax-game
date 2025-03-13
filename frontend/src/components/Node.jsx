@@ -1,5 +1,5 @@
 import React from 'react';
-import './Node.css'; // Import the CSS file
+import '../css/Node.css'; // Import the CSS file
 
 class Node extends React.Component {
   // Use class properties to avoid binding in render
