@@ -1,5 +1,5 @@
 import React from 'react';
-import Shaxboard from './shax';
+import Shaxboard from './ShaxBoard.jsx';
 import './css/App.css';
 
 function App() {
