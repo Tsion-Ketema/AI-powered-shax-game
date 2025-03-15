@@ -20,6 +20,8 @@ class Shaxboard extends React.Component {
                 gameOver: false,
                 winner: null,
                 phase:1,
+                usedMills: [],
+                canCapture: false,
                 selectedNode: null,
                 firstMillPlayer: null, // Track first mill in phase 1
                 mills: [
@@ -36,18 +38,45 @@ class Shaxboard extends React.Component {
     }
 
     checkMillFormation = (board, index, player) => {
-        return this.state.gameState.mills.some(mill =>
-            mill.includes(index) &&
-            mill.every(node => board[node].controllingPlayer === player)
-        );
+        return this.state.gameState.mills.some(mill => {
+            if (this.state.gameState.usedMills.some(used =>
+                used.every((node, i) => node === mill[i])
+            )) return false;
+
+            return mill.includes(index) &&
+                mill.every(node => board[node].controllingPlayer === player);
+        });
     }
 
+    areAllPiecesInMills = (player) => {
+        const { board } = this.state.gameState;
+        return board.every(node =>
+            node.controllingPlayer !== player ||
+            this.checkMillFormation(board, node.position, player)
+        );
+    }
     initializeBoard() {
         const board = [];
         for (let i = 0; i < 24; i++) {
             board.push({ position: this.getPosition(i), controllingPlayer: 0 });
         }
         return board;
+    }
+
+    isPlayerBlocked = (player) => {
+        const { board } = this.state.gameState;
+        const playerNodes = board
+            .map((node, index) => ({ index, player: node.controllingPlayer }))
+            .filter(n => n.player === player)
+            .map(n => n.index);
+
+        for (const nodeIndex of playerNodes) {
+            const adjacent = this.getAdjacentNodes(nodeIndex);
+            if (adjacent.some(adj => board[adj].controllingPlayer === 0)) {
+                return false; // Valid move exists
+            }
+        }
+        return true; // All pieces blocked
     }
 
     getPosition(index) {
@@ -58,7 +87,7 @@ class Shaxboard extends React.Component {
             [0, 50],[16.66, 50],[33.33, 50],[66.66, 50],[83.33, 50],[100, 50],
             [33.33, 66.66],[50, 66.66],[66.66, 66.66],
             [16.66, 83.33],[50, 83.33],[83.33, 83.33],
-                [0, 100] , [50, 100] ,[100, 100]
+            [0, 100] , [50, 100] ,[100, 100]
 
         ];
         return { xPos: positions[index][0], yPos: positions[index][1] };
@@ -131,30 +160,57 @@ class Shaxboard extends React.Component {
 
             if (selectedNode === null) {
                 // First click - select piece or capture
-                if (board[nodeIndex].controllingPlayer !== 0)    {
-                    if (board[nodeIndex].controllingPlayer !== currentPlayer) {
-                        console.log("Capturing by player "+ currentPlayer)
+                if (board[nodeIndex].controllingPlayer !== 0 &&
+                    board[nodeIndex].controllingPlayer !== currentPlayer) {
 
-                        // Only allow capture if piece has no empty adjacent nodes
-                        const updatedBoard = [...board];
-                        updatedBoard[nodeIndex].controllingPlayer = 0;
-                        currentPlayer === 2
-                            ? gameState.playerTwoCaptures++
-                            : gameState.playerOneCaptures++;
+                    // === NEW CAPTURE VALIDATION ===
+                    const isPartOfMill = this.checkMillFormation(
+                        board,
+                        nodeIndex,
+                        board[nodeIndex].controllingPlayer
+                    );
+                    const allInMills = this.areAllPiecesInMills(
+                        board[nodeIndex].controllingPlayer
+                    );
 
-                        const nextPlayer = currentPlayer === 1 ? 2 : 1;
-
+                    if (isPartOfMill && !allInMills) {
                         this.setState({
                             gameState: {
                                 ...gameState,
-                                board: updatedBoard,
-                                currentPlayer: nextPlayer,
-                                info: `Player ${nextPlayer}'s turn`,
-                            },
+                                info: "Cannot capture piece in mill"
+                            }
                         });
+                        return;
                     }
-                }else if (board[nodeIndex].controllingPlayer === currentPlayer) {
-                    // Select own piece for movement
+                    // === END NEW VALIDATION ===
+
+                    console.log("Capturing by player "+ currentPlayer)
+                    const updatedBoard = [...board];
+                    updatedBoard[nodeIndex].controllingPlayer = 0;
+                    currentPlayer === 2
+                        ? gameState.playerTwoCaptures++
+                        : gameState.playerOneCaptures++;
+
+                    // === MODIFIED TURN HANDLING ===
+                    const nextPlayer = gameState.canCapture
+                        ? currentPlayer
+                        : (currentPlayer === 1 ? 2 : 1);
+                    const info = gameState.canCapture
+                        ? "Capture another piece or move"
+                        : `Player ${nextPlayer}'s turn`;
+
+                    this.setState({
+                        gameState: {
+                            ...gameState,
+                            board: updatedBoard,
+                            currentPlayer: nextPlayer,
+                            canCapture: false,
+                            info: info
+                        },
+                    });
+                    // === END MODIFIED TURN HANDLING ===
+
+                } else if (board[nodeIndex].controllingPlayer === currentPlayer) {
                     console.log("am clicking my own node. "+nodeIndex)
                     this.setState({
                         gameState: {
@@ -168,7 +224,6 @@ class Shaxboard extends React.Component {
                 // Second click - handle movement
                 if (nodeIndex === selectedNode) {
                     console.log("canceled clicked node "+nodeIndex)
-                    // Deselect if clicking same node
                     this.setState({
                         gameState: {
                             ...gameState,
@@ -177,17 +232,62 @@ class Shaxboard extends React.Component {
                     });
                 } else {
                     const adjacentNodes = this.getAdjacentNodes(selectedNode);
-                    if (adjacentNodes.includes(nodeIndex) && board[nodeIndex].controllingPlayer === 0) {
-                        // Valid move
+                    if (adjacentNodes.includes(nodeIndex) &&
+                        board[nodeIndex].controllingPlayer === 0) {
+
                         const updatedBoard = [...board];
                         updatedBoard[nodeIndex].controllingPlayer = currentPlayer;
                         updatedBoard[selectedNode].controllingPlayer = 0;
+
+                        // === NEW MILL CHECK ===
+                        const millFormed = this.checkMillFormation(
+                            updatedBoard,
+                            nodeIndex,
+                            currentPlayer
+                        );
+
+                        if (millFormed) {
+                            const newMill = this.state.gameState.mills.find(mill =>
+                                mill.includes(nodeIndex) &&
+                                mill.every(n => updatedBoard[n].controllingPlayer === currentPlayer)
+                            );
+
+                            this.setState({
+                                gameState: {
+                                    ...gameState,
+                                    board: updatedBoard,
+                                    selectedNode: null,
+                                    canCapture: true,
+                                    usedMills: [...gameState.usedMills, newMill],
+                                    info: "Capture an opponent's piece"
+                                }
+                            });
+                            return;
+                        }
+                        // === END NEW MILL CHECK ===
 
                         currentPlayer === 1
                             ? gameState.playerOneMoves++
                             : gameState.playerTwoMoves++;
 
                         const nextPlayer = currentPlayer === 1 ? 2 : 1;
+
+                        if (this.isPlayerBlocked(nextPlayer)) {
+                            this.setState({
+                                gameState: {
+                                    ...gameState,
+                                    info: `Player ${nextPlayer} is blocked. ${currentPlayer} must move to unblock`,
+                                },
+                            });
+                        } else {
+                            this.setState({
+                                gameState: {
+                                    ...gameState,
+                                    currentPlayer: nextPlayer,
+                                    info: `Player ${nextPlayer}'s turn`,
+                                },
+                            });
+                        }
 
                         this.setState({
                             gameState: {
@@ -199,11 +299,20 @@ class Shaxboard extends React.Component {
                             },
                         });
                     } else {
-                        // Invalid move, reset selection
                         this.setState({
                             gameState: {
                                 ...gameState,
                                 selectedNode: null,
+                            },
+                        });
+                    }
+                    if (this.isPlayerBlocked(currentPlayer)) {
+                        const nextPlayer = currentPlayer === 1 ? 2 : 1;
+                        this.setState({
+                            gameState: {
+                                ...gameState,
+                                currentPlayer: nextPlayer,
+                                info: `Player ${currentPlayer} is blocked. ${nextPlayer} must move to unblock`,
                             },
                         });
                     }
