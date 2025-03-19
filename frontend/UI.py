@@ -15,8 +15,8 @@ pos_coords = {
 class MorrisGame:
     def __init__(self, root):
         self.root = root
-        self.root.title("Shax Game")
-        self.canvas = tk.Canvas(root, width=600, height=600, bg="sandy brown")
+        self.root.title("Shax game by AI crackers")
+        self.canvas = tk.Canvas(root, width=800, height=600, bg="sandy brown")
         self.canvas.pack()
 
         # Add Status Labels
@@ -115,6 +115,13 @@ class MorrisGame:
             self.ai_place()
 
     def handle_movement(self, pos):
+        # If it's the human's turn and not in a removal phase, check if human is blocked.
+        if self.turn == "human" and not self.removal_phase:
+            if not get_possible_moves_player(self.board, "1"):
+                messagebox.showinfo("Blocked", "You are blocked. AI will move to free up space.")
+                self.ai_forced_move_no_capture()
+                return
+
         if self.turn == "human":
             if self.selected is None:
                 if self.board[pos] != "1" and not self.removal_phase:
@@ -194,11 +201,20 @@ class MorrisGame:
         if self.placement_moves < 24:
             self.turn = "human"
         else:
-            self.phase = "movement"
+            self.phase = "opening"
             self.removal_phase = True
 
     def ai_move(self):
-        evaluation, move = minimax(self.board, depth,  alpha, beta, True, True)
+        if self.removal_phase:
+            self.ai_remove()
+            return
+
+        evaluation, move = minimax(self.board, depth, alpha, beta, True, True)
+        if move is None:
+            messagebox.showinfo("Blocked", "AI is blocked. Please make a move to free up space.")
+            self.turn = "human"
+            return
+
         if evaluation == float('-inf'):
             messagebox.showinfo("Game Over", "You win!")
             self.root.quit()
@@ -206,6 +222,48 @@ class MorrisGame:
             source, dest = move
             self.board[source] = 'x'
             self.board[dest] = '2'
+            print(f"AI moved from {source} to {dest}")
+            self.update_board()
+            if isMill(dest, self.board):
+                messagebox.showinfo("Mill Formed", "AI formed a mill! It will remove one of your pieces.")
+                self.removal_phase = True
+                self.root.after(500, self.ai_remove)
+                return
+        self.update_board()
+        self.check_win_conditions()
+        self.turn = "human"
+
+    def ai_remove(self):
+        # AI removal routine: remove one of the human's pieces.
+        for pos, piece in enumerate(self.board):
+            if piece == "1":
+                self.board[pos] = "x"
+                print(f"AI removed piece at {pos}")
+                self.ai_captures+=1
+                break
+        self.removal_phase = False
+        self.update_board()
+        self.check_win_conditions()
+        if self.turn == "ai":
+            self.turn = "human"
+        else:
+            self.turn = "ai"
+
+    def ai_forced_move_no_capture(self):
+        """
+        When the human is blocked, force the AI to move to free up space.
+        During these moves, even if a mill is formed, no capture occurs.
+        """
+        if not get_possible_moves_player(self.board, "2"):
+            messagebox.showinfo("Blocked", "AI is blocked too. No move can be made.")
+            return
+        evaluation, move = minimax(self.board, depth, alpha, beta, True, True)
+        if move is None:
+            messagebox.showinfo("Blocked", "AI is blocked. No move can be made.")
+            return
+        source, dest = move
+        self.board[source] = 'x'
+        self.board[dest] = '2'
         self.update_board()
         self.check_win_conditions()
         self.turn = "human"

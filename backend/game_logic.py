@@ -76,48 +76,6 @@ def removePiece(board, player):
             return True  # Piece successfully removed
     return False  # No removable piece found
 
-# --- Movement Handling ---
-
-
-def possibleMoves_stage2(board, player):
-    """Returns possible moves for the movement phase (adjacent moves)."""
-    board_list = []
-    for i in range(len(board)):
-        if board[i] == player:
-            for pos in adjacentLocations(i):
-                if board[pos] == 'x':
-                    board_copy = deepcopy(board)
-                    board_copy[i] = 'x'
-                    board_copy[pos] = player
-                    if isMill(pos, board_copy):
-                        removePiece(board_copy, player)
-                    board_list.append(board_copy)
-    return board_list
-
-
-def possibleMoves_stage3(board, player):
-    """Returns possible moves when a player has only 3 pieces left (flying rule)."""
-    board_list = []
-    for i in range(len(board)):
-        if board[i] == player:
-            for j in range(len(board)):
-                if board[j] == 'x':
-                    board_copy = deepcopy(board)
-                    board_copy[i] = 'x'
-                    board_copy[j] = player
-                    if isMill(j, board_copy):
-                        removePiece(board_copy, player)
-                    board_list.append(board_copy)
-    return board_list
-
-
-def possibleMoves_stage2or3(board, player):
-    """Chooses between stage 2 (adjacent moves) and stage 3 (flying) based on piece count."""
-    return possibleMoves_stage3(board, player) if numOfPieces(board, player) == 3 else possibleMoves_stage2(board, player)
-
-# --- AI Implementation with Minimax ---
-
-
 class Evaluate:
     def __init__(self):
         self.evaluate = 0
@@ -126,7 +84,7 @@ class Evaluate:
 
 alpha = float('-inf')
 beta = float('inf')
-depth = 2
+depth = 5
 CAPTURE_BONUS = 100
 THREAT_PENALTY = 50
 
@@ -209,8 +167,7 @@ def get_possible_moves_player(board, player):
         if board[i] == player:  # Check if the current position belongs to the player
             adjacent = adjacentLocations(i)  # Get adjacent positions
             for j in adjacent:
-                if board[j] == 'x':  # Check if the adjacent position is empty
-                    # Append (source, destination) tuple
+                if board[j] == 'x':
                     possible_moves.append((i, j))
     return possible_moves
 
