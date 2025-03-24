@@ -1,7 +1,14 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import tkinter as tk
 from tkinter import messagebox
-from backend.game_logic import *
-import sys
+from backend.utils import (
+    adjacentLocations, isMill, numOfPieces,
+    removePiece, remove_non_mill_piece
+)
+from backend.ai import minimax, alpha, beta, depth, get_possible_moves_player
+
 
 pos_coords = {
     0: (40, 40), 1: (280, 40), 2: (520, 40), 3: (120, 120), 4: (280, 120),
@@ -32,9 +39,10 @@ class MorrisGame:
         self.turn = "human"
         self.selected = None
         self.placement_moves = 0
+        self.first_mill=None
         self.removal_phase = False
         self.mills_formed = {"human": 0, "ai": 0}
-        self.opening_done = False
+        self.opening_count=2
 
         # Capture tracking
         self.human_captures = 0
@@ -79,7 +87,7 @@ class MorrisGame:
 
         status_text = (
             f"Turn: {turn_text}  |  Human Pieces: {human_pieces}  |  AI Pieces: {ai_pieces}  "
-            f"|  Human Captures: {self.human_captures}  |  AI Captures: {self.ai_captures}"
+            f"|  Human Captures: {self.human_captures}  |  AI Captures: {self.ai_captures}  | Phase: {self.phase}"
         )
         self.status_label.config(text=status_text)
 
@@ -89,28 +97,29 @@ class MorrisGame:
                 if self.phase == "placement":
                     self.handle_placement(pos)
                 elif self.phase == "opening":
-                    self.handle_opening(pos)
+                    self.handle_removal(pos)
                 elif self.phase == "movement":
                     self.handle_movement(pos)
                 return
 
     def handle_placement(self, pos):
+
         if self.board[pos] != "x":
             messagebox.showinfo("Invalid Move", "This position is occupied.")
             return
 
         self.board[pos] = "1"
         if isMill(pos, self.board):
+            if self.first_mill is None:
+                self.first_mill="human"
             self.mills_formed["human"] += 1
-            # self.removal_phase = False
 
         self.placement_moves += 1
         self.update_board()
 
         if self.placement_moves == 24:
             self.phase = "opening"
-            messagebox.showinfo(
-                "Opening Phase", "Now each player removes one opponent piece.")
+            self.handle_opening_phase()
         else:
             self.ai_place()
 
@@ -170,44 +179,74 @@ class MorrisGame:
         if self.board[pos] == "2":  # Check if the piece belongs to AI
             self.board[pos] = "x"
             self.human_captures += 1  # Increase human's capture count
+            self.opening_count-=1
             self.update_board()
-            self.removal_phase = False  # End the removal phase
-            self.turn = "ai"  # Switch turn to AI
+            self.turn = "ai"
+            if self.opening_count!=0:
+                self.ai_remove()
+            else:
+                self.phase="movement"
+                self.removal_phase=False
+                self.ai_move()
             self.root.after(500, self.ai_move)  # AI makes its move
         else:
             messagebox.showinfo("Invalid Selection",
                                 "Select an AI piece to remove.")
 
-    def handle_opening(self, pos):
-        if self.board[pos] == "2":
-            self.board[pos] = "x"
-            self.human_captures += 1  # Increase human's capture count
-            self.update_board()
-            self.opening_done = True
-            self.phase = "movement"
+    def handle_opening_phase(self):
+        """Handles the logic for the opening phase."""
+        # Determine the order of removal
+        if self.first_mill == "human":
+            print("Human formed the first mill")  # Debug statement
             messagebox.showinfo(
-                "Movement Phase", "Players can now move pieces.")
+                "Opening Phase", "You formed a mill first! Remove one AI piece.")
+            self.removal_phase=True
+        elif self.first_mill == "ai":
+            print("AI formed the first mill")  # Debug statement
+            messagebox.showinfo(
+                "Opening Phase", "AI formed a mill first! It will remove one of your pieces.")
+            self.ai_remove()  # AI removes one human piece
+        else:
+            print("No mills were formed")  # Debug statement
+            messagebox.showinfo(
+                "Opening Phase", "No mills were formed. AI will remove one of your pieces first.")
+            self.ai_remove()
+
+    def remove_piece_opening(self, player):
+        """Handles the removal of a piece by the specified player during the opening phase."""
+        if player == "human":
+            self.removal_phase = True  # Allow human to remove a piece
+            messagebox.showinfo("Your Turn", "Click on an AI piece to remove.")
+        elif player == "ai":
+            # AI removes one human piece
+            for pos in range(len(self.board)):
+                if self.board[pos] == "1":  # Find the first human piece
+                    self.board[pos] = "x"  # Remove it
+                    self.ai_captures += 1  # Increment AI's capture count
+                    self.update_board()
+                    break
+            self.removal_phase = False  # End the removal phase for the AI
 
     def ai_place(self):
         evaluation, move = minimax(
             self.board, depth,  alpha, beta, True, False)
-        if evaluation == float('-inf'):
-            messagebox.showinfo("Game Over", "You win!")
-            self.root.quit()
-        else:
-            self.board[move] = '2'
+        self.board[move] = '2'
+        if isMill(move, self.board):
+            if self.first_mill is None:  # Check if this is the first mill
+                self.first_mill = "ai"  # Record that the AI formed the first mill
         self.placement_moves += 1
         self.update_board()
         if self.placement_moves < 24:
             self.turn = "human"
         else:
             self.phase = "opening"
+            self.handle_opening_phase()
             self.removal_phase = True
 
     def ai_move(self):
-        if self.removal_phase:
-            self.ai_remove()
-            return
+        # if self.removal_phase:
+        #     self.ai_remove()
+        #     return
 
         evaluation, move = minimax(self.board, depth, alpha, beta, True, True)
         if move is None:
@@ -242,12 +281,16 @@ class MorrisGame:
                 self.ai_captures+=1
                 break
         self.removal_phase = False
+        self.opening_count-=1
         self.update_board()
         self.check_win_conditions()
-        if self.turn == "ai":
-            self.turn = "human"
+        self.turn="human"
+        if self.phase=="opening" and self.opening_count==0:
+            self.phase="movement"
         else:
-            self.turn = "ai"
+            messagebox.showinfo(
+                "Opening Phase", "Now it's your turn to remove one AI piece.")
+            self.removal_phase=True
 
     def ai_forced_move_no_capture(self):
         """
@@ -278,9 +321,3 @@ class MorrisGame:
         elif human_pieces < 3:
             messagebox.showinfo("Game Over", "You lose!")
             self.root.quit()
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    game = MorrisGame(root)
-    root.mainloop()
