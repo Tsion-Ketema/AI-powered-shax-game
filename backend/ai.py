@@ -53,8 +53,11 @@ def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
     if is_maximizing:
         if is_movement_phase:
             max_eval = float('-inf')
+            available_moves = get_possible_moves_player(board, '2')
             best_move = None
-            for source, dest in get_possible_moves_player(board, '2'):
+            if available_moves:
+                best_move = available_moves[0]
+            for source, dest in available_moves:
                 new_board = apply_move(board, source, dest, '2')
                 eval, _ = minimax(new_board, depth-1, alpha, beta, False, is_movement_phase)
                 if eval > max_eval:
@@ -104,8 +107,3 @@ def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
                 if beta <= alpha:
                     break
             return min_eval, best_move
-
-# Constants for the AI
-alpha = float('-inf')
-beta = float('inf')
-depth = 5

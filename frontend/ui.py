@@ -1,3 +1,4 @@
+import random
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -7,7 +8,7 @@ from backend.utils import (
     adjacentLocations, isMill, numOfPieces,
     removePiece, remove_non_mill_piece
 )
-from backend.ai import minimax, alpha, beta, depth, get_possible_moves_player
+from backend.ai import minimax, get_possible_moves_player
 
 
 pos_coords = {
@@ -43,6 +44,9 @@ class MorrisGame:
         self.removal_phase = False
         self.mills_formed = {"human": 0, "ai": 0}
         self.opening_count=2
+        self.alpha = float('-inf')
+        self.beta = float('inf')
+        self.depth = 8
 
         # Capture tracking
         self.human_captures = 0
@@ -179,7 +183,8 @@ class MorrisGame:
         if self.board[pos] == "2":  # Check if the piece belongs to AI
             self.board[pos] = "x"
             self.human_captures += 1  # Increase human's capture count
-            self.opening_count-=1
+            if self.phase=="opening":
+                self.opening_count-=1
             self.update_board()
             self.turn = "ai"
             if self.opening_count!=0:
@@ -187,8 +192,7 @@ class MorrisGame:
             else:
                 self.phase="movement"
                 self.removal_phase=False
-                self.ai_move()
-            self.root.after(500, self.ai_move)  # AI makes its move
+                self.root.after(500, self.ai_move)  # AI makes its move
         else:
             messagebox.showinfo("Invalid Selection",
                                 "Select an AI piece to remove.")
@@ -229,7 +233,7 @@ class MorrisGame:
 
     def ai_place(self):
         evaluation, move = minimax(
-            self.board, depth,  alpha, beta, True, False)
+            self.board, self.depth,  self.alpha, self.beta, True, False)
         self.board[move] = '2'
         if isMill(move, self.board):
             if self.first_mill is None:  # Check if this is the first mill
@@ -248,7 +252,7 @@ class MorrisGame:
         #     self.ai_remove()
         #     return
 
-        evaluation, move = minimax(self.board, depth, alpha, beta, True, True)
+        evaluation, move = minimax(self.board, self.depth, self.alpha, self.beta, True, True)
         if move is None:
             messagebox.showinfo("Blocked", "AI is blocked. Please make a move to free up space.")
             self.turn = "human"
@@ -281,13 +285,14 @@ class MorrisGame:
                 self.ai_captures+=1
                 break
         self.removal_phase = False
-        self.opening_count-=1
+        if self.phase=="opening":
+            self.opening_count-=1
         self.update_board()
         self.check_win_conditions()
         self.turn="human"
         if self.phase=="opening" and self.opening_count==0:
             self.phase="movement"
-        else:
+        elif self.opening_count!=0:
             messagebox.showinfo(
                 "Opening Phase", "Now it's your turn to remove one AI piece.")
             self.removal_phase=True
@@ -297,16 +302,26 @@ class MorrisGame:
         When the human is blocked, force the AI to move to free up space.
         During these moves, even if a mill is formed, no capture occurs.
         """
+        moves = get_possible_moves_player(self.board, "2")
+
+        for move in moves:
+            src, dest = move
+            adjacent = adjacentLocations(src)
+            for j in random.choices(adjacent):
+                if self.board[j] == '1':
+                    self.board[src] = 'x'
+                    self.board[dest] = '2'
+                    print(f"AI block removal move from {src} to {dest}")
+                    self.update_board()
+                    return
+
         if not get_possible_moves_player(self.board, "2"):
             messagebox.showinfo("Blocked", "AI is blocked too. No move can be made.")
             return
-        evaluation, move = minimax(self.board, depth, alpha, beta, True, True)
+        evaluation, move = minimax(self.board, self.depth, self.alpha, self.beta, True, True)
         if move is None:
             messagebox.showinfo("Blocked", "AI is blocked. No move can be made.")
             return
-        source, dest = move
-        self.board[source] = 'x'
-        self.board[dest] = '2'
         self.update_board()
         self.check_win_conditions()
         self.turn = "human"
