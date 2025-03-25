@@ -46,7 +46,8 @@ class MorrisGame:
         self.opening_count=2
         self.alpha = float('-inf')
         self.beta = float('inf')
-        self.depth = 8
+        self.depth = 6
+        self.blocked=False
 
         # Capture tracking
         self.human_captures = 0
@@ -166,7 +167,7 @@ class MorrisGame:
                 self.canvas.delete("highlight")
                 self.selected = None
                 self.update_board()
-                if isMill(pos, self.board):
+                if isMill(pos, self.board) and not self.blocked:
                     messagebox.showinfo(
                         "Mill Formed", "You formed a mill! Remove one of AI's pieces.")
                     self.removal_phase = True
@@ -256,6 +257,7 @@ class MorrisGame:
         if move is None:
             messagebox.showinfo("Blocked", "AI is blocked. Please make a move to free up space.")
             self.turn = "human"
+            self.blocked=True
             return
 
         if evaluation == float('-inf'):
