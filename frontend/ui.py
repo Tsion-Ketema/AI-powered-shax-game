@@ -8,7 +8,7 @@ from backend.utils import (
     adjacentLocations, isMill, numOfPieces,
     removePiece, remove_non_mill_piece
 )
-from backend.ai import minimax, get_possible_moves_player
+from backend.ai import monte_carlo_tree_search, get_possible_moves_player
 
 
 pos_coords = {
@@ -47,6 +47,8 @@ class MorrisGame:
         self.alpha = float('-inf')
         self.beta = float('inf')
         self.depth = 8
+        self.blocked=False
+        self.iteration= 15000
 
         # Capture tracking
         self.human_captures = 0
@@ -166,7 +168,7 @@ class MorrisGame:
                 self.canvas.delete("highlight")
                 self.selected = None
                 self.update_board()
-                if isMill(pos, self.board):
+                if isMill(pos, self.board) and not self.blocked:
                     messagebox.showinfo(
                         "Mill Formed", "You formed a mill! Remove one of AI's pieces.")
                     self.removal_phase = True
@@ -187,6 +189,7 @@ class MorrisGame:
                 self.opening_count-=1
             self.update_board()
             self.turn = "ai"
+            self.blocked = False
             if self.opening_count!=0:
                 self.ai_remove()
             else:
@@ -232,8 +235,8 @@ class MorrisGame:
             self.removal_phase = False  # End the removal phase for the AI
 
     def ai_place(self):
-        evaluation, move = minimax(
-            self.board, self.depth,  self.alpha, self.beta, True, False)
+        move = monte_carlo_tree_search(
+            self.board, '2',  False,self.iteration)
         self.board[move] = '2'
         if isMill(move, self.board):
             if self.first_mill is None:  # Check if this is the first mill
@@ -252,26 +255,26 @@ class MorrisGame:
         #     self.ai_remove()
         #     return
 
-        evaluation, move = minimax(self.board, self.depth, self.alpha, self.beta, True, True)
+        move = monte_carlo_tree_search(
+            self.board, '2',  True,self.iteration)
         if move is None:
             messagebox.showinfo("Blocked", "AI is blocked. Please make a move to free up space.")
+            self.blocked = True
             self.turn = "human"
             return
 
-        if evaluation == float('-inf'):
-            messagebox.showinfo("Game Over", "You win!")
-            self.root.quit()
-        else:
-            source, dest = move
-            self.board[source] = 'x'
-            self.board[dest] = '2'
-            print(f"AI moved from {source} to {dest}")
-            self.update_board()
-            if isMill(dest, self.board):
-                messagebox.showinfo("Mill Formed", "AI formed a mill! It will remove one of your pieces.")
-                self.removal_phase = True
-                self.root.after(500, self.ai_remove)
-                return
+
+
+        source, dest = move
+        self.board[source] = 'x'
+        self.board[dest] = '2'
+        print(f"AI moved from {source} to {dest}")
+        self.update_board()
+        if isMill(dest, self.board):
+            messagebox.showinfo("Mill Formed", "AI formed a mill! It will remove one of your pieces.")
+            self.removal_phase = True
+            self.root.after(500, self.ai_remove)
+            return
         self.update_board()
         self.check_win_conditions()
         self.turn = "human"
@@ -318,7 +321,8 @@ class MorrisGame:
         if not get_possible_moves_player(self.board, "2"):
             messagebox.showinfo("Blocked", "AI is blocked too. No move can be made.")
             return
-        evaluation, move = minimax(self.board, self.depth, self.alpha, self.beta, True, True)
+        evaluation, move = monte_carlo_tree_search(
+            self.board, '2',  True,self.iteration)
         if move is None:
             messagebox.showinfo("Blocked", "AI is blocked. No move can be made.")
             return
