@@ -245,10 +245,6 @@ class MorrisGame:
             self.removal_phase = True
 
     def ai_move(self):
-        # if self.removal_phase:
-        #     self.ai_remove()
-        #     return
-
         evaluation, move = minimax(
             self.board, self.depth, self.alpha, self.beta, True, True)
         if move is None:
@@ -275,13 +271,69 @@ class MorrisGame:
         self.turn = "human"
 
     def ai_remove(self):
-        # AI removal routine: remove one of the human's pieces.
+        """
+        AI removal routine: remove one of the human's pieces.
+        Prioritize removing a human piece that blocks the AI from forming a mill,
+        and ensure there is another AI piece that can later move into the vacant space.
+        """
+        # Step 1: Search for AI pieces with potential mills
         for pos, piece in enumerate(self.board):
-            if piece == "1":
+            if piece == "2":  # Check AI pieces
+                # Get all adjacent positions for this AI piece
+                adjacent_positions = adjacentLocations(pos)
+                for adj_pos in adjacent_positions:
+                    # Check if adjacent position is also an AI piece
+                    if self.board[adj_pos] == "2":
+                        # Check for a potential mill with a blocking human piece
+                        for mill in mills:
+                            if pos in mill and adj_pos in mill:  # Both AI pieces are part of the same mill
+                                # Find the third position in the mill
+                                blocking_pos = [
+                                    p for p in mill if p != pos and p != adj_pos][0]
+                                # Debug: Check the blocking position
+                                print(
+                                    f"Checking mill: {mill}, blocking position: {blocking_pos}")
+                                # Check if the third position is a human piece
+                                if self.board[blocking_pos] == "1":
+                                    # Debug: Blocking piece found
+                                    print(
+                                        f"Blocking piece found at {blocking_pos}")
+                                    # Check if there is another AI piece adjacent to the blocking position
+                                    backup_positions = adjacentLocations(
+                                        blocking_pos)
+                                    if any(self.board[backup_pos] == "2" for backup_pos in backup_positions):
+                                        # Debug: Backup piece found
+                                        print(
+                                            f"Backup piece found for blocking position {blocking_pos}")
+                                        # Remove the blocking human piece
+                                        self.board[blocking_pos] = "x"
+                                        print(
+                                            f"AI removed blocking piece at {blocking_pos}")
+                                        self.ai_captures += 1
+                                        self.update_board()
+                                        self.removal_phase = False
+                                        if self.phase == "opening":
+                                            self.opening_count -= 1
+                                        self.check_win_conditions()
+                                        self.turn = "human"
+                                        if self.phase == "opening" and self.opening_count == 0:
+                                            self.phase = "movement"
+                                        elif self.opening_count != 0:
+                                            messagebox.showinfo(
+                                                "Opening Phase", "Now it's your turn to remove one AI piece.")
+                                            self.removal_phase = True
+                                        return
+
+        # Step 2: If no blocking piece is found, remove the first available human piece
+        for pos, piece in enumerate(self.board):
+            if piece == "1":  # Find the first human piece
+                print(
+                    f"No blocking piece found. Removing first available piece at {pos}")
                 self.board[pos] = "x"
-                print(f"AI removed piece at {pos}")
                 self.ai_captures += 1
                 break
+
+        # Update the game state after removal
         self.removal_phase = False
         if self.phase == "opening":
             self.opening_count -= 1
@@ -294,6 +346,27 @@ class MorrisGame:
             messagebox.showinfo(
                 "Opening Phase", "Now it's your turn to remove one AI piece.")
             self.removal_phase = True
+
+    # def ai_remove(self):
+    #     # AI removal routine: remove one of the human's pieces.
+    #     for pos, piece in enumerate(self.board):
+    #         if piece == "1":
+    #             self.board[pos] = "x"
+    #             print(f"AI removed piece at {pos}")
+    #             self.ai_captures += 1
+    #             break
+    #     self.removal_phase = False
+    #     if self.phase == "opening":
+    #         self.opening_count -= 1
+    #     self.update_board()
+    #     self.check_win_conditions()
+    #     self.turn = "human"
+    #     if self.phase == "opening" and self.opening_count == 0:
+    #         self.phase = "movement"
+    #     elif self.opening_count != 0:
+    #         messagebox.showinfo(
+    #             "Opening Phase", "Now it's your turn to remove one AI piece.")
+    #         self.removal_phase = True
 
     def ai_forced_move_no_capture(self):
         """
