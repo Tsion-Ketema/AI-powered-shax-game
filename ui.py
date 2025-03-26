@@ -40,7 +40,7 @@ class MorrisGame:
         self.opening_count = 2
         self.alpha = float('-inf')
         self.beta = float('inf')
-        self.depth = 6
+        self.depth = 5
         self.blocked = False
 
         # Capture tracking
@@ -71,6 +71,7 @@ class MorrisGame:
         for pos, (x, y) in pos_coords.items():
             piece = self.board[pos]
             color = "green" if piece == "1" else "yellow" if piece == "2" else "white"
+            self.canvas.create_text(x, y - 25, text=str(pos), fill="black")
             self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                     fill=color, outline="black", width=2, tag="piece")
 
