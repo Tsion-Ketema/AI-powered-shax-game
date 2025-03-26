@@ -36,23 +36,6 @@ def apply_move(board, pos1, pos2, player):
     return new_board
 
 
-# def evaluate(board):
-#     CAPTURE_BONUS = 100
-#     THREAT_PENALTY = 50
-#     score = 0
-#     for combo in mills:
-#         ai_count = sum(1 for pos in combo if board[pos] == '2')
-#         opp_count = sum(1 for pos in combo if board[pos] == '1')
-
-#         if ai_count == 3:
-#             score += CAPTURE_BONUS
-#         elif opp_count == 3:
-#             score -= CAPTURE_BONUS
-#         elif opp_count == 2 and any(board[pos] == 'x' for pos in combo):
-#             score -= THREAT_PENALTY
-
-#     return score
-
 def select_capture_position(board):
     # Prioritize removing opponent's mills or strategic positions
     opponent_pieces = [i for i in range(len(board)) if board[i] == '1']

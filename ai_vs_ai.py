@@ -13,6 +13,7 @@ pos_coords = {
     20: (440, 440), 21: (40, 520), 22: (280, 520), 23: (520, 520)
 }
 
+
 class MorrisGame:
     def __init__(self, root):
         self.root = root
@@ -96,10 +97,12 @@ class MorrisGame:
 
     def ai_place(self):
         if self.turn == "ai":
-            evaluation, move = minimax(self.board, self.depth, self.alpha, self.beta, True, False)
+            evaluation, move = minimax(
+                self.board, self.depth, self.alpha, self.beta, True, False)
             self.board[move] = '1'  # AI places a piece
         elif self.turn == "ai2":
-            evaluation, move = minimax(self.board, self.depth, self.alpha, self.beta, False, False)
+            evaluation, move = minimax(
+                self.board, self.depth, self.alpha, self.beta, False, False)
             self.board[move] = '2'  # AI2 places a piece
 
         self.placement_moves += 1
@@ -129,78 +132,116 @@ class MorrisGame:
 
     def ai_remove(self):
         """
-        Automate the removal of pieces during the opening phase.
-        Each player removes two pieces before transitioning to the movement phase.
+        AI removal routine: remove one of the opponent's pieces.
+        Prioritize removing a human piece that blocks the AI from forming a mill,
+        and ensure there is another AI piece that can later move into the vacant space.
         """
-        if self.turn == "ai":
-            # AI removes an AI2 piece
-            for pos, piece in enumerate(self.board):
-                if piece == "2":  # Find the first AI2 piece
-                    self.board[pos] = "x"
-                    self.ai_captures += 1
-                    break
-        elif self.turn == "ai2":
-            # AI2 removes an AI piece
-            for pos, piece in enumerate(self.board):
-                if piece == "1":  # Find the first AI piece
-                    self.board[pos] = "x"
-                    self.ai2_captures += 1
-                    break
+        # Step 1: Search for blocking human pieces
+        for pos, piece in enumerate(self.board):
+            if piece == "2":  # Check AI pieces
+                for adj_pos in adjacentLocations(pos):
+                    if self.board[adj_pos] == "2":  # Check adjacent AI piece
+                        for mill in mills:
+                            if pos in mill and adj_pos in mill:  # Both AI pieces are part of the same mill
+                                blocking_pos = [
+                                    p for p in mill if p != pos and p != adj_pos][0]
+                                # Check if the third position is a human piece
+                                if self.board[blocking_pos] == "1":
+                                    if any(self.board[backup_pos] == "2" for backup_pos in adjacentLocations(blocking_pos)):
+                                        # Remove the blocking human piece
+                                        self.board[blocking_pos] = "x"
+                                        print(
+                                            f"AI removed blocking piece at {blocking_pos}")
+                                        self.ai_captures += 1
+                                        self.update_after_removal()
+                                        return
 
+        # Step 2: Fallback to removing the first available human piece
+        for pos, piece in enumerate(self.board):
+            if piece == "1":  # Find the first human piece
+                print(
+                    f"No blocking piece found. Removing first available piece at {pos}")
+                self.board[pos] = "x"
+                self.ai_captures += 1
+                break
+
+        # Update the game state after removal
+        self.update_after_removal()
+
+    def update_after_removal(self):
+        """
+        Updates the game state after a piece is removed.
+        """
         self.update_board()
-
-        # Decrement the opening count
-        self.opening_count -= 1
-
-        # Check if both players have completed their removals
-        if self.opening_count == 0:
-            self.phase = "movement"
-            self.turn = "ai2" if self.turn == "ai" else "ai"
-            self.root.after(500, self.ai_move)
+        self.removal_phase = False
+        if self.phase == "opening":
+            self.opening_count -= 1
+            if self.opening_count == 0:
+                self.phase = "movement"
+                self.turn = "ai2" if self.turn == "ai" else "ai"
+                self.root.after(500, self.ai_move)
+            else:
+                self.turn = "ai2" if self.turn == "ai" else "ai"
+                self.root.after(500, self.ai_remove)
         else:
-            # Alternate turns for removals
-            self.turn = "ai2" if self.turn == "ai" else "ai"
-            self.root.after(500, self.ai_remove)
+            self.check_win_conditions()
+            self.turn = "human"
 
     def ai_move(self):
+        print(f"AI Move: Current Turn: {self.turn}, Phase: {self.phase}")
         if self.turn == "ai":
             moves = get_possible_moves_player(self.board, "1")
+            print(f"AI Possible Moves: {moves}")
             if not moves:
+                print("AI has no moves. Switching to AI2.")
                 self.turn = "ai2"
                 self.root.after(500, self.ai_forced_move_no_capture)
                 return
-            evaluation, move = minimax(self.board, self.depth, self.alpha, self.beta, True, True)
+            evaluation, move = minimax(
+                self.board, self.depth, self.alpha, self.beta, True, True)
+            print(f"AI Chosen Move: {move}, Evaluation: {evaluation}")
             if move is None:
+                print("AI could not find a valid move. Switching to AI2.")
                 self.turn = "ai2"
                 self.root.after(500, self.ai_forced_move_no_capture)
                 return
             source, dest = move
+            print(f"AI Moving from {source} to {dest}")
             self.board[source] = 'x'
             self.board[dest] = '1'
         elif self.turn == "ai2":
             moves = get_possible_moves_player(self.board, "2")
+            print(f"AI2 Possible Moves: {moves}")
             if not moves:
+                print("AI2 has no moves. Switching to AI.")
                 self.turn = "ai"
                 self.root.after(500, self.ai_forced_move_no_capture)
                 return
-            evaluation, move = minimax(self.board, self.depth, self.alpha, self.beta, False, True)
+            evaluation, move = minimax(
+                self.board, self.depth, self.alpha, self.beta, False, True)
+            print(f"AI2 Chosen Move: {move}, Evaluation: {evaluation}")
             if move is None:
+                print("AI2 could not find a valid move. Switching to AI.")
                 self.turn = "ai"
                 self.root.after(500, self.ai_forced_move_no_capture)
                 return
             source, dest = move
+            print(f"AI2 Moving from {source} to {dest}")
             self.board[source] = 'x'
             self.board[dest] = '2'
 
         self.update_board()
 
         if isMill(dest, self.board):
+            print(
+                f"Mill formed at {dest} by {self.turn}. Entering removal phase.")
             self.removal_phase = True
             self.root.after(500, self.ai_remove)
             return
 
         self.check_win_conditions()
         self.turn = "ai2" if self.turn == "ai" else "ai"
+        print(f"Turn switched to: {self.turn}")
         self.root.after(500, self.ai_move)
 
     def ai_forced_move_no_capture(self):
@@ -241,6 +282,7 @@ class MorrisGame:
         elif ai2_pieces < 3:
             messagebox.showinfo("Game Over", "AI wins!")
             self.root.quit()
+
 
 # Run the game
 if __name__ == "__main__":
