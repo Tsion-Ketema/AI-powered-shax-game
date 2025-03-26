@@ -347,27 +347,7 @@ class MorrisGame:
                 "Opening Phase", "Now it's your turn to remove one AI piece.")
             self.removal_phase = True
 
-    # def ai_remove(self):
-    #     # AI removal routine: remove one of the human's pieces.
-    #     for pos, piece in enumerate(self.board):
-    #         if piece == "1":
-    #             self.board[pos] = "x"
-    #             print(f"AI removed piece at {pos}")
-    #             self.ai_captures += 1
-    #             break
-    #     self.removal_phase = False
-    #     if self.phase == "opening":
-    #         self.opening_count -= 1
-    #     self.update_board()
-    #     self.check_win_conditions()
-    #     self.turn = "human"
-    #     if self.phase == "opening" and self.opening_count == 0:
-    #         self.phase = "movement"
-    #     elif self.opening_count != 0:
-    #         messagebox.showinfo(
-    #             "Opening Phase", "Now it's your turn to remove one AI piece.")
-    #         self.removal_phase = True
-
+   
     def ai_forced_move_no_capture(self):
         """
         When the human is blocked, force the AI to move to free up space.
