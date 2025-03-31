@@ -11,6 +11,15 @@ adjacent = {
     14: [2, 13, 23], 15: [11, 16], 16: [15, 17, 19], 17: [12, 16], 18: [10, 19],
     19: [16, 18, 20, 22], 20: [13, 19], 21: [9, 22], 22: [19, 21, 23], 23: [14, 22]
 }
+import torch
+
+def encode_board(board):
+    """
+    Convert the Shax board into a PyTorch tensor.
+    'x' -> 0, '1' -> 1, '2' -> 2
+    Output shape: [1, 24] for model input
+    """
+    return torch.tensor([0 if x == 'x' else int(x) for x in board], dtype=torch.float32).unsqueeze(0)
 
 def adjacentLocations(position):
     return adjacent[position]

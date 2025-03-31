@@ -1,3 +1,4 @@
+import json
 import random
 import sys
 import os
@@ -9,6 +10,7 @@ from backend.utils import (
     removePiece, remove_non_mill_piece
 )
 from backend.ai import monte_carlo_tree_search, get_possible_moves_player
+from backend.nn_player import choose_move_from_nn
 
 
 pos_coords = {
@@ -53,6 +55,11 @@ class MorrisGame:
         # Capture tracking
         self.human_captures = 0
         self.ai_captures = 0
+
+        #game recording
+        self.human_game_log = []
+        self.game_id = random.randint(1000, 9999)
+
 
         self.canvas.bind("<Button-1>", self.handle_click)
         self.update_board()
@@ -109,12 +116,14 @@ class MorrisGame:
                 return
 
     def handle_placement(self, pos):
-
+        """Handles the placement of pieces on the board."""
         if self.board[pos] != "x":
             messagebox.showinfo("Invalid Move", "This position is occupied.")
             return
-
+        self.prev_board = self.board[:]
         self.board[pos] = "1"
+        self.record_move("1", pos, 0, False)
+
         if isMill(pos, self.board):
             if self.first_mill is None:
                 self.first_mill="human"
@@ -165,6 +174,10 @@ class MorrisGame:
                     return
                 self.board[self.selected] = "x"
                 self.board[pos] = "1"
+                action = (self.selected, pos)
+                reward = 2 if isMill(pos, self.board) else 0
+                done = numOfPieces(self.board, "1") < 3 or numOfPieces(self.board, "2") < 3
+                self.record_move("1", action, reward, done)
                 self.canvas.delete("highlight")
                 self.selected = None
                 self.update_board()
@@ -181,9 +194,20 @@ class MorrisGame:
             return
 
     def handle_removal(self, pos):
+        previous_board = self.board.copy()
+        reward = 3
         """Handles the removal of an opponent's piece when a mill is formed."""
         if self.board[pos] == "2":  # Check if the piece belongs to AI
             self.board[pos] = "x"
+            self.human_game_log.append({
+            "state": [0 if x == 'x' else int(x) for x in previous_board],
+            "player": "1",  # or "2" for AI
+            "action": pos,
+            "reward": reward,  # or 0 for now
+            "next_state": [0 if x == 'x' else int(x) for x in self.board],
+            "done": False,
+            "phase": self.phase
+        })
             self.human_captures += 1  # Increase human's capture count
             if self.phase=="opening":
                 self.opening_count-=1
@@ -235,12 +259,16 @@ class MorrisGame:
             self.removal_phase = False  # End the removal phase for the AI
 
     def ai_place(self):
-        move = monte_carlo_tree_search(
-            self.board, '2',  False,self.iteration)
+        reward = 1
+        move = choose_move_from_nn(self.board, is_movement_phase=False)
+        self.prev_board = self.board[:]
         self.board[move] = '2'
         if isMill(move, self.board):
             if self.first_mill is None:  # Check if this is the first mill
                 self.first_mill = "ai"  # Record that the AI formed the first mill
+                reward = 10
+        
+        self.record_move("2", move, reward, False)
         self.placement_moves += 1
         self.update_board()
         if self.placement_moves < 24:
@@ -251,21 +279,19 @@ class MorrisGame:
             self.removal_phase = True
 
     def ai_move(self):
-        # if self.removal_phase:
-        #     self.ai_remove()
-        #     return
+        reward = 0
 
-        move = monte_carlo_tree_search(
-            self.board, '2',  True,self.iteration)
+        move = choose_move_from_nn(self.board, is_movement_phase=True)
         if move is None:
             messagebox.showinfo("Blocked", "AI is blocked. Please make a move to free up space.")
             self.blocked = True
             self.turn = "human"
             return
-
-
-
+        self.prev_board = self.board[:]
+        
         source, dest = move
+        action = (source, dest)
+        
         self.board[source] = 'x'
         self.board[dest] = '2'
         print(f"AI moved from {source} to {dest}")
@@ -274,16 +300,21 @@ class MorrisGame:
             messagebox.showinfo("Mill Formed", "AI formed a mill! It will remove one of your pieces.")
             self.removal_phase = True
             self.root.after(500, self.ai_remove)
+            reward = 10
             return
+        self.record_move("2", action, reward, False)
         self.update_board()
         self.check_win_conditions()
         self.turn = "human"
 
     def ai_remove(self):
+        previous_board = self.board.copy()
+        reward = 3
         # AI removal routine: remove one of the human's pieces.
         for pos, piece in enumerate(self.board):
             if piece == "1":
                 self.board[pos] = "x"
+                self.record_move("2", pos, reward, False)
                 print(f"AI removed piece at {pos}")
                 self.ai_captures+=1
                 break
@@ -312,8 +343,11 @@ class MorrisGame:
             adjacent = adjacentLocations(src)
             for j in random.choices(adjacent):
                 if self.board[j] == '1':
+                    self.prev_board = self.board[:]
                     self.board[src] = 'x'
                     self.board[dest] = '2'
+                    action = (src, dest)
+                    self.record_move("2", action, 0, False)
                     print(f"AI block removal move from {src} to {dest}")
                     self.update_board()
                     return
@@ -336,7 +370,29 @@ class MorrisGame:
 
         if ai_pieces < 3:
             messagebox.showinfo("Game Over", "You win!")
+            self.human_game_log[-1]["reward"] += 10
+            self.save_game_log()
             self.root.quit()
         elif human_pieces < 3:
+            self.human_game_log[-1]["reward"] += 10
             messagebox.showinfo("Game Over", "You lose!")
+            self.save_game_log()
             self.root.quit()
+    def record_move(self, player, action, reward, done):
+        self.human_game_log.append({
+            "state": [0 if x == 'x' else int(x) for x in self.prev_board],
+            "player": player,
+            "action": action,
+            "reward": reward,
+            "next_state": [0 if x == 'x' else int(x) for x in self.board],
+            "done": done,
+            "phase": self.phase
+        })
+
+    def save_game_log(self):
+        os.makedirs("recorded_human_games", exist_ok=True)
+        with open(f"recorded_human_games/game_{self.game_id}.jsonl", "w") as f:
+            for entry in self.human_game_log:
+                f.write(json.dumps(entry) + "\n")
+
+

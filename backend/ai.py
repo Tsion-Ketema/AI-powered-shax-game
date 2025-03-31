@@ -1,6 +1,34 @@
 import random
 import math
-from .utils import mills, adjacentLocations
+from .utils import mills, adjacentLocations, encode_board
+import torch
+import torch.nn as nn
+
+# === Neural Network Definitions ===
+class ShaxNet(nn.Module):
+    def __init__(self, output_size):
+        super().__init__()
+        self.fc1 = nn.Linear(24, 128)
+        self.fc2 = nn.Linear(128, 128)
+        self.fc_policy = nn.Linear(128, output_size)
+        self.fc_value = nn.Linear(128, 1)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        policy_logits = self.fc_policy(x)
+        value = torch.tanh(self.fc_value(x))
+        return policy_logits, value
+
+# === Load Models ===
+placement_model = ShaxNet(24)
+movement_model = ShaxNet(24 * 24)
+
+placement_model.load_state_dict(torch.load("placement_model.pth", map_location=torch.device('cpu')))
+movement_model.load_state_dict(torch.load("movement_model.pth", map_location=torch.device('cpu')))
+
+placement_model.eval()
+movement_model.eval()
 
 
 class Node:
@@ -26,21 +54,31 @@ class Node:
             possible_moves = get_possible_moves_player(self.board, self.player)
         else:
             possible_moves = get_possible_moves(self.board)
-
-        for move in possible_moves:
+        if not possible_moves:
+            return []
+        # Load model and policy prediction
+        board_tensor = encode_board(self.board)
+        model = movement_model if self.is_movement_phase else placement_model
+        with torch.no_grad():
+            logits, _ = model(board_tensor)
+            probs = torch.softmax(logits, dim=1).squeeze(0).numpy()
+        # Reorder moves based on predicted probabilities
+        if self.is_movement_phase:
+            move_scores = {move: probs[move[0] * 24 + move[1]] for move in possible_moves}
+        else:
+            move_scores = {move: probs[move] for move in possible_moves}
+        sorted_moves = sorted(possible_moves, key=lambda m: -move_scores[m])
+        for move in sorted_moves:
             if self.is_movement_phase:
                 new_board = apply_move(self.board, move[0], move[1], self.player)
             else:
                 new_board = apply_place(self.board, move, self.player)
-
             next_player = '1' if self.player == '2' else '2'
-            # Phase transitions are handled externally - assume phase remains the same
-            # unless your game has specific transition rules (not specified here)
-            new_is_movement_phase = self.is_movement_phase  # Default: phase remains
-
+            new_is_movement_phase = self.is_movement_phase
             child_node = Node(new_board, next_player, new_is_movement_phase, move=move, parent=self)
             self.children.append(child_node)
         return self.children
+
 
     def best_child(self, exploration_weight=math.sqrt(2)):
         if not self.children:
@@ -62,41 +100,12 @@ class Node:
 
 
 def simulate(node):
-    current_board = node.board.copy()
-    current_player = node.player
-    is_movement_phase = node.is_movement_phase  # Use phase from node state
-    max_depth = 100
-    depth = 0
+    board_tensor = encode_board(node.board)
+    model = movement_model if node.is_movement_phase else placement_model
 
-    while True:
-        if depth >= max_depth:
-            return evaluate(current_board)
-
-        if is_movement_phase:
-            possible_moves = get_possible_moves_player(current_board, current_player)
-        else:
-            possible_moves = get_possible_moves(current_board)
-
-        if not possible_moves:
-            return evaluate(current_board)
-
-        if not node.is_movement_phase:
-            # Prioritize strategic positions in placement phase
-            strategic_moves = [move for move in possible_moves if move in [4, 10, 13, 19]]
-            if strategic_moves:
-                move = random.choice(strategic_moves)
-            else:
-                move = random.choice(possible_moves)
-        else:
-            move = random.choice(possible_moves)
-        if is_movement_phase:
-            new_board = apply_move(current_board, move[0], move[1], current_player)
-        else:
-            new_board = apply_place(current_board, move, current_player)
-        current_board = new_board
-        current_player = '1' if current_player == '2' else '2'
-        # Phase remains the same during simulation (as per original rules)
-        depth += 1
+    with torch.no_grad():
+        _, value = model(board_tensor)
+    return value.item()
 
 
 def monte_carlo_tree_search(initial_board, player, is_movement_phase, iterations=1000):
