@@ -122,4 +122,4 @@ def train_model(epochs=10, batch_size=64, lr=1e-3):
 
 
 if __name__ == "__main__":
-    train_model(epochs=50)
+    train_model(epochs=500)

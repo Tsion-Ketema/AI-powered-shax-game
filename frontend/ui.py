@@ -160,6 +160,9 @@ class MorrisGame:
                                             12, pos_coords[pos][1]+12,
                                             outline="red", width=3, tag="highlight")
             else:
+                if self.removal_phase:
+                    self.handle_removal(pos)
+                    return
                 if self.board[pos] != "x":
                     messagebox.showinfo(
                         "Invalid Move", "Destination occupied.")
@@ -175,9 +178,9 @@ class MorrisGame:
                 self.board[self.selected] = "x"
                 self.board[pos] = "1"
                 action = (self.selected, pos)
-                reward = 2 if isMill(pos, self.board) else 0
+                reward =  2 if isMill(pos, self.board) else 0
                 done = numOfPieces(self.board, "1") < 3 or numOfPieces(self.board, "2") < 3
-                self.record_move("1", action, reward, done)
+                self.record_move("1", action, reward, False)
                 self.canvas.delete("highlight")
                 self.selected = None
                 self.update_board()
@@ -194,20 +197,12 @@ class MorrisGame:
             return
 
     def handle_removal(self, pos):
-        previous_board = self.board.copy()
         reward = 3
+        self.prev_board = self.board[:]
         """Handles the removal of an opponent's piece when a mill is formed."""
         if self.board[pos] == "2":  # Check if the piece belongs to AI
             self.board[pos] = "x"
-            self.human_game_log.append({
-            "state": [0 if x == 'x' else int(x) for x in previous_board],
-            "player": "1",  # or "2" for AI
-            "action": pos,
-            "reward": reward,  # or 0 for now
-            "next_state": [0 if x == 'x' else int(x) for x in self.board],
-            "done": False,
-            "phase": self.phase
-        })
+            self.record_move("1", pos, reward, False)
             self.human_captures += 1  # Increase human's capture count
             if self.phase=="opening":
                 self.opening_count-=1
