@@ -129,6 +129,7 @@ def monte_carlo_tree_search(initial_board, player, is_movement_phase, iterations
         return None
     best_child = max(root.children, key=lambda child: child.visits)
     return best_child.move
+    
 
 
 # Original functions remain unchanged

@@ -8,7 +8,7 @@ import tkinter as tk
 from backend.utils import (
     adjacentLocations, isMill, numOfPieces
 )
-from backend.ai import get_possible_moves_player, monte_carlo_tree_search
+from backend.ai_mcts import get_possible_moves_player, monte_carlo_tree_search
 
 pos_coords = {
     0: (40, 40), 1: (280, 40), 2: (520, 40), 3: (120, 120), 4: (280, 120),
