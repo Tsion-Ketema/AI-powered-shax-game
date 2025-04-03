@@ -4,7 +4,9 @@ import random
 
 
 def get_possible_moves(board):
-    return [i for i in range(len(board)) if board[i] == 'x']
+    moves = [i for i in range(len(board)) if board[i] == 'x']
+    random.shuffle(moves)
+    return moves
 
 
 def get_positions(board, player):
@@ -20,12 +22,18 @@ def get_possible_moves_player(board, player):
             for j in adjacent:
                 if board[j] == 'x':
                     possible_moves.append((i, j))
+    random.shuffle(possible_moves)
     return possible_moves
 
 
 def apply_place(board, move, player):
     new_board = board[:]
     new_board[move] = player
+    return new_board
+
+def apply_removal(board, move):
+    new_board = board[:]
+    new_board[move] = 'x'
     return new_board
 
 
@@ -108,22 +116,25 @@ def evaluate(board):
     return score
 
 
-def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
+def minimax(board, depth, alpha, beta, player, is_maximizing, phase):
+    opponent = "2" if player == "1" else "1"
     possible_moves = get_possible_moves(board)
-    if depth == 0 or not possible_moves:
-        return evaluate(board), None
+    if phase!="removal":
+        if depth == 0 or not possible_moves:
+            return evaluate(board), None
+    
 
     if is_maximizing:
-        if is_movement_phase:
+        if phase=="movement":
             max_eval = float('-inf')
-            available_moves = get_possible_moves_player(board, '2')
+            available_moves = get_possible_moves_player(board, player)
             best_move = None
             if available_moves:
                 best_move = available_moves[0]
             for source, dest in available_moves:
-                new_board = apply_move(board, source, dest, '2')
+                new_board = apply_move(board, source, dest, player)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, False, is_movement_phase)
+                                  beta, False, opponent, phase)
                 if eval > max_eval:
                     max_eval = eval
                     best_move = (source, dest)
@@ -131,13 +142,26 @@ def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
                 if beta <= alpha:
                     break
             return max_eval, best_move
+        elif phase =="removal":
+            max_eval = float('-inf')
+            removal_pos = get_positions(board,player)
+            best_move = removal_pos[0]
+            print(f"initial move {best_move}")
+            for move in removal_pos:
+                new_board = apply_removal(board, move)
+                eval = evaluate(new_board)
+                print(f"current move {move} current eval {eval}")
+                if eval > max_eval:
+                    max_eval = eval
+                    best_move = move
+            return max_eval, best_move
         else:
             max_eval = float('-inf')
             best_move = None
             for move in get_possible_moves(board):
-                new_board = apply_place(board, move, '2')
+                new_board = apply_place(board, move, player)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, False, is_movement_phase)
+                                  beta, False, opponent ,phase)
                 if eval > max_eval:
                     max_eval = eval
                     best_move = move
@@ -146,13 +170,13 @@ def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
                     break
             return max_eval, best_move
     else:
-        if is_movement_phase:
+        if phase=="movement":
             min_eval = float('inf')
             best_move = None
-            for source, dest in get_possible_moves_player(board, '1'):
-                new_board = apply_move(board, source, dest, '1')
+            for source, dest in get_possible_moves_player(board, opponent):
+                new_board = apply_move(board, source, dest, opponent)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, True, is_movement_phase)
+                                  beta, True,player, phase)
                 if eval < min_eval:
                     min_eval = eval
                     best_move = (source, dest)
@@ -164,9 +188,9 @@ def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
             min_eval = float('inf')
             best_move = None
             for move in get_possible_moves(board):
-                new_board = apply_place(board, move, '1')
+                new_board = apply_place(board, move, opponent)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, True, is_movement_phase)
+                                  beta, True, player,phase)
                 if eval < min_eval:
                     min_eval = eval
                     best_move = move

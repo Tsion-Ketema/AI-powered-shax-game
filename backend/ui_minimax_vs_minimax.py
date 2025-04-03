@@ -37,7 +37,7 @@ class MorrisGame:
         self.first_mill = None
         self.removal_phase = False
         self.mills_formed = {"ai": 0, "ai2": 0}
-        self.opening_count = 4
+        self.opening_count = 2
         self.alpha = float('-inf')
         self.beta = float('inf')
         self.depth = 4
@@ -105,7 +105,7 @@ class MorrisGame:
         if random.random() < 0.5:
             self.depth = random.choice([3, 4, 5])
         
-        self.root.after(500, self.ai_place)
+        self.root.after(1500, self.ai_place)
 
     def ai_place(self):
         if self.turn == "ai":
@@ -134,15 +134,15 @@ class MorrisGame:
             print(f"AI placed a piece at {move}")
             
             # Check if mill was formed
+            # Check if mill was formed
             if isMill(move, self.board):
                 for m in mills:
                     if move in m and all(self.board[p] == '1' for p in m):
-                        print(f"AI formed a mill with positions {m}")
+                        print(f"AI1 formed a mill with positions {m}")
+                        if self.first_mill is None:
+                            self.first_mill = "ai"
                         self.mills_formed["ai"] += 1
-                        self.removal_phase = True
-                        self.turn = "ai"  # Stay AI's turn for removal
-                        self.root.after(500, self.ai_remove)
-                        return
+                        break
         elif self.turn == "ai2":
             possible_positions = get_possible_moves(self.board)
             
@@ -173,22 +173,38 @@ class MorrisGame:
                 for m in mills:
                     if move in m and all(self.board[p] == '2' for p in m):
                         print(f"AI2 formed a mill with positions {m}")
+                        if self.first_mill is None:
+                            self.first_mill = "ai2"
                         self.mills_formed["ai2"] += 1
-                        self.removal_phase = True
-                        self.turn = "ai2"  # Stay AI2's turn for removal
-                        self.root.after(500, self.ai_remove)
-                        return
+                        break
 
         self.placement_moves += 1
         self.update_board()
 
-        if self.placement_moves < 18:  # Changed from 24 to 18 (9 pieces each)
+        if self.placement_moves <24:  # Changed from 24 to 18 (9 pieces each)
             self.turn = "ai2" if self.turn == "ai" else "ai"
             self.root.after(500, self.ai_place)
         else:
-            self.phase = "movement"
+            self.phase = "opening"
+            self.turn = "ai2" if self.turn == "ai" else "ai"
+            self.update_status()
+            self.handle_opening_phase()
+
+
+    def handle_opening_phase(self):
+        """
+        Handle the opening phase where both players remove pieces.
+        Each player removes two pieces before transitioning to the movement phase.
+        """
+        if self.first_mill == "ai":
             self.turn = "ai"
-            self.root.after(500, self.ai_move)
+            self.root.after(500, self.ai_remove)
+        elif self.first_mill == "ai2":
+            self.turn = "ai2"
+            self.root.after(500, self.ai_remove)
+        else:
+            self.turn = "ai2"
+            self.root.after(500, self.ai_remove)
 
     def ai_remove(self):
         current_player = "1" if self.turn == "ai" else "2"
@@ -235,16 +251,21 @@ class MorrisGame:
             if best_pos is not None:
                 self.board[best_pos] = "x"
                 print(f"{self.turn} removed opponent's piece at position {best_pos}")
+                if self.phase=="opening" and self.opening_count>1:
+                    self.turn = "ai2" if self.turn == "ai" else "ai"
+                    self.opening_count-=1
+                    self.root.after(500, self.ai_remove())
+                elif self.opening_count==1:
+                    self.phase="movement"
+                    self.turn = "ai2" if self.turn == "ai" else "ai"
+                    self.removal_phase=False
+                    self.root.after(500, self.ai_move())
                 if self.turn == "ai":
                     self.ai_captures += 1
                 else:
                     self.ai2_captures += 1
         
         self.update_board()
-        self.removal_phase = False
-        self.turn = "ai2" if self.turn == "ai" else "ai"
-        self.root.after(500, self.ai_move if self.phase == "movement" else self.ai_place)
-
     def ai_move(self):
         print(f"AI Move: Turn: {self.turn}, Phase: {self.phase}")
 
@@ -260,17 +281,15 @@ class MorrisGame:
 
         if not moves:
             print(f"{self.turn} has no moves. Game over!")
-            winner = "AI2" if self.turn == "ai" else "AI"
-            messagebox.showinfo("Game Over", f"{winner} wins because opponent has no moves!")
-            self.save_game_history()
-            self.root.quit()
+            self.turn = "ai2" if self.turn == "ai" else "ai"
+            self.root.after(500, self.ai_forced_move_no_capture())
             return
 
         # Check for repeated moves
         if len(self.last_five_moves) >= 10:  # 5 moves from each player
             # Check if the last 10 moves (5 per player) are being repeated
             if self.last_five_moves[-10:] == self.last_five_moves[-20:-10]:
-                print("Detected move repetition. Adding randomness.")
+                print("Detected move repetition. Adding rFandomness.")
                 # Introduce more randomness to break the cycle
                 if random.random() < 0.4:  # 40% chance to make a random move
                     move = random.choice(moves)
@@ -354,19 +373,19 @@ class MorrisGame:
             self.save_game_history()
             self.root.quit()
             
-        # Check if a player has no valid moves
-        if self.phase == "movement":
-            ai_moves = get_possible_moves_player(self.board, "1")
-            ai2_moves = get_possible_moves_player(self.board, "2")
+        # # Check if a player has no valid moves
+        # if self.phase == "movement":
+        #     ai_moves = get_possible_moves_player(self.board, "1")
+        #     ai2_moves = get_possible_moves_player(self.board, "2")
             
-            if not ai_moves and self.turn == "ai":
-                messagebox.showinfo("Game Over", "AI2 wins! AI has no valid moves.")
-                self.save_game_history()
-                self.root.quit()
-            elif not ai2_moves and self.turn == "ai2":
-                messagebox.showinfo("Game Over", "AI wins! AI2 has no valid moves.")
-                self.save_game_history()
-                self.root.quit()
+        #     if not ai_moves and self.turn == "ai":
+        #         messagebox.showinfo("Game Over", "AI2 wins! AI has no valid moves.")
+        #         self.save_game_history()
+        #         self.root.quit()
+        #     elif not ai2_moves and self.turn == "ai2":
+        #         messagebox.showinfo("Game Over", "AI wins! AI2 has no valid moves.")
+        #         self.save_game_history()
+        #         self.root.quit()
     
     def save_game_history(self):
         """Save the game history to a file for later training"""
@@ -375,6 +394,35 @@ class MorrisGame:
             for i, board_state in enumerate(self.game_history):
                 f.write(f"Move {i}: {','.join(board_state)}\n")
         print(f"Game history saved to game_history_{timestamp}.txt")
+
+    def ai_forced_move_no_capture(self):
+         """
+         Handle forced moves when a player is blocked.
+         During these moves, no captures occur, even if a mill is formed.
+         """
+         if self.turn == "ai":
+             moves = get_possible_moves_player(self.board, "1")
+             if not moves:
+                 self.turn = "ai2"
+                 self.root.after(500, self.ai_move)
+                 return
+             source, dest = random.choice(moves)
+             self.board[source] = 'x'
+             self.board[dest] = '1'
+         elif self.turn == "ai2":
+             moves = get_possible_moves_player(self.board, "2")
+             if not moves:
+                 self.turn = "ai"
+                 self.root.after(500, self.ai_move)
+                 return
+             source, dest = random.choice(moves)
+             self.board[source] = 'x'
+             self.board[dest] = '2'
+ 
+         self.update_board()
+         self.check_win_conditions()
+         self.turn = "ai2" if self.turn == "ai" else "ai"
+         self.root.after(500, self.ai_move)
 
 
 def evaluate_with_randomness(board, randomness_factor=0.1):

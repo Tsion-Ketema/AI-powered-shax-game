@@ -9,7 +9,7 @@ from backend.utils import (
     adjacentLocations, isMill, numOfPieces,
     removePiece, remove_non_mill_piece
 )
-from backend.ai import monte_carlo_tree_search, get_possible_moves_player
+from backend.ai_mcts import monte_carlo_tree_search, get_possible_moves_player
 from backend.nn_player import choose_move_from_nn
 
 
