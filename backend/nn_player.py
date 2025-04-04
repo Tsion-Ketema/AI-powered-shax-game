@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from .utils import encode_board
+from utils import encode_board
 
 class ShaxNet(nn.Module):
     def __init__(self, output_size):
@@ -17,9 +17,9 @@ class ShaxNet(nn.Module):
         value = torch.tanh(self.fc_value(x))
         return policy_logits, value
 
-
-
 # Load Trained Models
+
+
 placement_model = ShaxNet(24)
 placement_model.load_state_dict(torch.load("placement_model.pth", map_location=torch.device('cpu')))
 placement_model.eval()
@@ -29,7 +29,7 @@ movement_model.load_state_dict(torch.load("movement_model.pth", map_location=tor
 movement_model.eval()
 
 
-from backend.utils import encode_board, adjacentLocations
+from utils import encode_board, adjacentLocations
 
 def choose_move_from_nn(board, is_movement_phase=True):
     input_tensor = encode_board(board)

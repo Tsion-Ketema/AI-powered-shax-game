@@ -1,8 +1,9 @@
 import random
 import math
-from .utils import mills, adjacentLocations, encode_board
+from utils import mills, adjacentLocations, encode_board
 import torch
 import torch.nn as nn
+import os
 
 # === Neural Network Definitions ===
 class ShaxNet(nn.Module):
@@ -19,23 +20,30 @@ class ShaxNet(nn.Module):
         policy_logits = self.fc_policy(x)
         value = torch.tanh(self.fc_value(x))
         return policy_logits, value
-
+    
 # === Load Models ===
 placement_model = ShaxNet(24)
 movement_model = ShaxNet(24 * 24)
+removal_model = ShaxNet(24 * 24)
 
-placement_model.load_state_dict(torch.load("placement_model.pth", map_location=torch.device('cpu')))
-movement_model.load_state_dict(torch.load("movement_model.pth", map_location=torch.device('cpu')))
+# Dynamically locate model paths based on this file's location
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))  # One level up from /backend
+placement_path = os.path.join(base_dir, 'placement_model.pth')
+movement_path = os.path.join(base_dir, 'movement_model.pth')
+
+# Load models safely
+placement_model.load_state_dict(torch.load(placement_path, map_location=torch.device('cpu')))
+movement_model.load_state_dict(torch.load(movement_path, map_location=torch.device('cpu')))
 
 placement_model.eval()
 movement_model.eval()
 
 
 class Node:
-    def __init__(self, board, player, is_movement_phase, move=None, parent=None):
+    def __init__(self, board, player, phase, move=None, parent=None):
         self.board = board.copy()
         self.player = player
-        self.is_movement_phase = is_movement_phase  # Track phase as part of node state
+        self.phase = phase  # Track phase as part of node state
         self.move = move
         self.parent = parent
         self.children = []
@@ -43,39 +51,53 @@ class Node:
         self.total_reward = 0
 
     def is_fully_expanded(self):
-        if self.is_movement_phase:
+        if self.phase == 'movement':
             possible_moves = get_possible_moves_player(self.board, self.player)
+        elif self.phase == 'removal':
+            possible_moves = get_positions(self.board, self.player)
         else:
             possible_moves = get_possible_moves(self.board)
         return len(self.children) == len(possible_moves)
 
     def expand(self):
-        if self.is_movement_phase:
+        if self.phase == 'movement':
             possible_moves = get_possible_moves_player(self.board, self.player)
+        elif self.phase == 'removal':
+            possible_moves = get_positions(self.board, self.player)
         else:
             possible_moves = get_possible_moves(self.board)
         if not possible_moves:
             return []
         # Load model and policy prediction
         board_tensor = encode_board(self.board)
-        model = movement_model if self.is_movement_phase else placement_model
+        # model = movement_model if self.phase == "movement" else placement_model
+        if self.phase == "movement":
+            model = movement_model
+        elif self.phase == "removal":
+            pass
+        else:
+            model = placement_model
         with torch.no_grad():
             logits, _ = model(board_tensor)
             probs = torch.softmax(logits, dim=1).squeeze(0).numpy()
         # Reorder moves based on predicted probabilities
-        if self.is_movement_phase:
+        if self.phase == "movement":
             move_scores = {move: probs[move[0] * 24 + move[1]] for move in possible_moves}
+        elif self.phase == "removal":
+            move_scores = {move: probs[move] for move in possible_moves}
         else:
             move_scores = {move: probs[move] for move in possible_moves}
         sorted_moves = sorted(possible_moves, key=lambda m: -move_scores[m])
         for move in sorted_moves:
-            if self.is_movement_phase:
+            if self.phase == "movement":
                 new_board = apply_move(self.board, move[0], move[1], self.player)
+            elif self.phase == "removal":
+                new_board = apply_removal(self.board, move)
             else:
                 new_board = apply_place(self.board, move, self.player)
             next_player = '1' if self.player == '2' else '2'
-            new_is_movement_phase = self.is_movement_phase
-            child_node = Node(new_board, next_player, new_is_movement_phase, move=move, parent=self)
+            # new_is_movement_phase = self.phase == "movement"
+            child_node = Node(new_board, next_player, self.phase, move=move, parent=self)
             self.children.append(child_node)
         return self.children
 
@@ -101,15 +123,19 @@ class Node:
 
 def simulate(node):
     board_tensor = encode_board(node.board)
-    model = movement_model if node.is_movement_phase else placement_model
-
+    if node.phase == "movement":
+        model = movement_model
+    elif node.phase == "removal":
+        model = removal_model
+    else:
+        model = placement_model
     with torch.no_grad():
         _, value = model(board_tensor)
     return value.item()
 
 
-def monte_carlo_tree_search(initial_board, player, is_movement_phase, iterations=1000):
-    root = Node(initial_board, player, is_movement_phase)
+def monte_carlo_tree_search(initial_board, player, phase, iterations=1000, ):
+    root = Node(initial_board, player, phase)
     for _ in range(iterations):
         node = root
         while node.is_fully_expanded() and node.children:
@@ -159,6 +185,17 @@ def apply_move(board, pos1, pos2, player):
     new_board[pos1] = 'x'
     new_board[pos2] = player
     return new_board
+
+def apply_removal(board, move):
+    new_board = board[:]
+    new_board[move] = 'x'
+    return new_board
+
+
+
+def get_positions(board, player):
+    return [i for i in range(len(board)) if board[i] == player]
+
 
 
 def select_capture_position(board):

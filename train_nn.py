@@ -66,9 +66,11 @@ def train_model(epochs=10, batch_size=64, lr=1e-3):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     model_placement = ShaxNet(output_size=24).to(DEVICE)
+    model_removal = ShaxNet(output_size=24 * 24).to(DEVICE)
     model_movement = ShaxNet(output_size=24 * 24).to(DEVICE)
 
     optimizer_placement = optim.Adam(model_placement.parameters(), lr=lr)
+    optimizer_removal = optim.Adam(model_removal.parameters(), lr=lr)
     optimizer_movement = optim.Adam(model_movement.parameters(), lr=lr)
 
     loss_policy_fn = nn.CrossEntropyLoss()
@@ -78,6 +80,7 @@ def train_model(epochs=10, batch_size=64, lr=1e-3):
         total_policy_loss = 0
         total_value_loss = 0
         model_placement.train()
+        model_removal.train()
         model_movement.train()
 
         for batch in dataloader:
@@ -98,6 +101,9 @@ def train_model(epochs=10, batch_size=64, lr=1e-3):
                 if phase == "placement":
                     logits, values = model_placement(phase_states)
                     optimizer = optimizer_placement
+                elif phase == "removal":
+                    logits, values = model_removal(phase_states)
+                    optimizer = optimizer_removal
                 else:
                     logits, values = model_movement(phase_states)
                     optimizer = optimizer_movement
@@ -118,8 +124,9 @@ def train_model(epochs=10, batch_size=64, lr=1e-3):
     # Save models
     torch.save(model_placement.state_dict(), "placement_model.pth")
     torch.save(model_movement.state_dict(), "movement_model.pth")
+    torch.save(model_removal.state_dict(), "removal_model.pth")
     print("Models saved.")
 
 
 if __name__ == "__main__":
-    train_model(epochs=1500)
+    train_model(epochs=500)
