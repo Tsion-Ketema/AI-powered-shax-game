@@ -12,7 +12,7 @@ from ai_mcts import monte_carlo_tree_search
 # ========================
 AI_TYPE = {
     "ai": "mcts",     # options: 'minimax' or 'mcts'
-    "ai2": "mcts"
+    "ai2": "minimax"
 }
 
 # Position coordinates for the board

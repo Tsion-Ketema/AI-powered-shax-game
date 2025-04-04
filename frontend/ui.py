@@ -255,7 +255,7 @@ class MorrisGame:
 
     def ai_place(self):
         reward = 1
-        move = choose_move_from_nn(self.board, is_movement_phase=False)
+        move = choose_move_from_nn(self.board, self.phase)
         self.prev_board = self.board[:]
         self.board[move] = '2'
         if isMill(move, self.board):
@@ -276,7 +276,7 @@ class MorrisGame:
     def ai_move(self):
         reward = 0
 
-        move = choose_move_from_nn(self.board, is_movement_phase=True)
+        move = choose_move_from_nn(self.board, self.phase)
         if move is None:
             messagebox.showinfo("Blocked", "AI is blocked. Please make a move to free up space.")
             self.blocked = True
@@ -286,7 +286,6 @@ class MorrisGame:
         
         source, dest = move
         action = (source, dest)
-        
         self.board[source] = 'x'
         self.board[dest] = '2'
         print(f"AI moved from {source} to {dest}")

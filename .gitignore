@@ -21414,3 +21414,5 @@ recorded_human_games/game_9538.jsonl
 frontend/__pycache__/UI.cpython-311.pyc
 .idea/misc.xml
 .idea/workspace.xml
+backend/__pycache__/ai_mcts.cpython-312.pyc
+frontend/__pycache__/UI.cpython-311.pyc

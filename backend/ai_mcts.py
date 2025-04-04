@@ -1,6 +1,6 @@
 import random
 import math
-from utils import mills, adjacentLocations, encode_board
+from .utils import mills, adjacentLocations, encode_board
 import torch
 import torch.nn as nn
 import os

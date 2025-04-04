@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from utils import encode_board
+from .utils import encode_board
 
 class ShaxNet(nn.Module):
     def __init__(self, output_size):
@@ -28,13 +28,16 @@ movement_model = ShaxNet(24 * 24)
 movement_model.load_state_dict(torch.load("movement_model.pth", map_location=torch.device('cpu')))
 movement_model.eval()
 
+removal_model = ShaxNet(24)
+removal_model.load_state_dict(torch.load("removal_model.pth", map_location=torch.device('cpu')))
+removal_model.eval()
 
-from utils import encode_board, adjacentLocations
+from .utils import encode_board, adjacentLocations
 
-def choose_move_from_nn(board, is_movement_phase=True):
+def choose_move_from_nn(board,phase):
     input_tensor = encode_board(board)
 
-    if is_movement_phase:
+    if phase == "movement":
         logits, _ = movement_model(input_tensor)
         probs = torch.softmax(logits, dim=1).squeeze(0)
         sorted_indices = torch.argsort(probs, descending=True).tolist()
@@ -53,7 +56,14 @@ def choose_move_from_nn(board, is_movement_phase=True):
             return (src, dst)
 
         return None  # No valid move found
+    elif phase == "removal":
+            logits, _ = removal_model(input_tensor)
+            probs = torch.softmax(logits, dim=1).squeeze(0)
+            sorted_indices = torch.argsort(probs, descending=True).tolist()
 
+            for move in sorted_indices:
+                if board[move] == '1':  # Find first empty spot
+                    return move
     else:
         logits, _ = placement_model(input_tensor)
         probs = torch.softmax(logits, dim=1).squeeze(0)
