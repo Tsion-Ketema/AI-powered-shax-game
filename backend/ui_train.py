@@ -57,7 +57,7 @@ class MorrisGame:
     def run_ai(self, board, depth, alpha, beta, player_symbol, is_maximizing, phase):
         ai_id = "ai" if player_symbol == "1" else "ai2"
         strategy = AI_TYPE[ai_id]
-        # print(f"[{phase.upper()} PHASE] Player {player_symbol} ({ai_id.upper()}) is using {strategy.upper()} algorithm.")
+        print(f"[{phase.upper()} PHASE] Player {player_symbol} ({ai_id.upper()}) is using {strategy.upper()} algorithm.")
 
         if strategy == "minimax":
             return minimax(board, depth, alpha, beta, player_symbol, is_maximizing, phase)
@@ -65,8 +65,8 @@ class MorrisGame:
             move = monte_carlo_tree_search(
                 board,
                 player_symbol,
-                self.phase,
-                iterations=1000
+                "removal" if phase == "opening" else phase,
+                iterations=10000
             )
             if move is None:
                 return 0, None
@@ -147,7 +147,7 @@ class MorrisGame:
         reward = 3
         symbol = "1" if self.turn == "ai" else "2"
         opponent = "2" if symbol == "1" else "1"
-        evaluation, move = self.run_ai(self.board, self.depth, self.alpha, self.beta, opponent, True, "removal")
+        evaluation, move = self.run_ai(self.board, self.depth, self.alpha, self.beta, symbol, True, "removal")
         if move is None:
             print(f"[WARNING] {self.turn.upper()} could not find a piece to remove.")
             self.turn = "ai2" if self.turn == "ai" else "ai"

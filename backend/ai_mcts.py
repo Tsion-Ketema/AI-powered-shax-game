@@ -24,20 +24,22 @@ class ShaxNet(nn.Module):
 # === Load Models ===
 placement_model = ShaxNet(24)
 movement_model = ShaxNet(24 * 24)
-removal_model = ShaxNet(24 * 24)
+removal_model = ShaxNet(24)
 
 # Dynamically locate model paths based on this file's location
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))  # One level up from /backend
 placement_path = os.path.join(base_dir, 'placement_model.pth')
 movement_path = os.path.join(base_dir, 'movement_model.pth')
+removal_path = os.path.join(base_dir, 'removal_model.pth')
 
 # Load models safely
 placement_model.load_state_dict(torch.load(placement_path, map_location=torch.device('cpu')))
 movement_model.load_state_dict(torch.load(movement_path, map_location=torch.device('cpu')))
+removal_model.load_state_dict(torch.load(removal_path, map_location=torch.device('cpu')))
 
 placement_model.eval()
 movement_model.eval()
-
+removal_model.eval()
 
 class Node:
     def __init__(self, board, player, phase, move=None, parent=None):
@@ -63,7 +65,10 @@ class Node:
         if self.phase == 'movement':
             possible_moves = get_possible_moves_player(self.board, self.player)
         elif self.phase == 'removal':
-            possible_moves = get_positions(self.board, self.player)
+            opponent = '1' if self.player == '2' else '2'
+            possible_moves = get_positions(self.board, opponent)
+            print(f"[DEBUG] Possible Moves for Removal Phase: {possible_moves}")
+            model = removal_model
         else:
             possible_moves = get_possible_moves(self.board)
         if not possible_moves:
@@ -74,7 +79,7 @@ class Node:
         if self.phase == "movement":
             model = movement_model
         elif self.phase == "removal":
-            pass
+            model = removal_model
         else:
             model = placement_model
         with torch.no_grad():
@@ -96,7 +101,6 @@ class Node:
             else:
                 new_board = apply_place(self.board, move, self.player)
             next_player = '1' if self.player == '2' else '2'
-            # new_is_movement_phase = self.phase == "movement"
             child_node = Node(new_board, next_player, self.phase, move=move, parent=self)
             self.children.append(child_node)
         return self.children
@@ -134,7 +138,7 @@ def simulate(node):
     return value.item()
 
 
-def monte_carlo_tree_search(initial_board, player, phase, iterations=1000, ):
+def monte_carlo_tree_search(initial_board, player, phase, iterations=1000):
     root = Node(initial_board, player, phase)
     for _ in range(iterations):
         node = root
@@ -152,12 +156,11 @@ def monte_carlo_tree_search(initial_board, player, phase, iterations=1000, ):
             node.visits += 1
             node = node.parent
     if not root.children:
-        return None
+         print("[DEBUG] No children generated for root node during removal phase.")
+         return None
     best_child = max(root.children, key=lambda child: child.visits)
     return best_child.move
     
-
-
 # Original functions remain unchanged
 def get_possible_moves(board):
     return [i for i in range(len(board)) if board[i] == 'x']
@@ -187,15 +190,22 @@ def apply_move(board, pos1, pos2, player):
     return new_board
 
 def apply_removal(board, move):
+    print(f"[DEBUG] Applying Removal at Position: {move}")
     new_board = board[:]
     new_board[move] = 'x'
     return new_board
 
 
 
-def get_positions(board, player):
-    return [i for i in range(len(board)) if board[i] == player]
+# def get_positions(board, player):
+#     return [i for i in range(len(board)) if board[i] == player]
 
+
+def get_positions(board, player):
+    positions = [i for i in range(len(board)) if board[i] == player]
+    print(f"[DEBUG] Positions for Player {player}: {positions}")
+    print(f"[DEBUG] Board State: {board}")
+    return positions
 
 
 def select_capture_position(board):

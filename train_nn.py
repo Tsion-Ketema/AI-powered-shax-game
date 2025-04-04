@@ -66,7 +66,7 @@ def train_model(epochs=10, batch_size=64, lr=1e-3):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     model_placement = ShaxNet(output_size=24).to(DEVICE)
-    model_removal = ShaxNet(output_size=24 * 24).to(DEVICE)
+    model_removal = ShaxNet(output_size=24).to(DEVICE)
     model_movement = ShaxNet(output_size=24 * 24).to(DEVICE)
 
     optimizer_placement = optim.Adam(model_placement.parameters(), lr=lr)
