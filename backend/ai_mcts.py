@@ -1,26 +1,12 @@
 import random
 import math
+
+from .train_nn import ShaxNet
 from .utils import mills, adjacentLocations, encode_board
 import torch
 import torch.nn as nn
 import os
 
-# === Neural Network Definitions ===
-class ShaxNet(nn.Module):
-    def __init__(self, output_size):
-        super().__init__()
-        self.fc1 = nn.Linear(24, 128)
-        self.fc2 = nn.Linear(128, 128)
-        self.fc_policy = nn.Linear(128, output_size)
-        self.fc_value = nn.Linear(128, 1)
-
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        policy_logits = self.fc_policy(x)
-        value = torch.tanh(self.fc_value(x))
-        return policy_logits, value
-    
 # === Load Models ===
 placement_model = ShaxNet(24)
 movement_model = ShaxNet(24 * 24)

@@ -1,23 +1,8 @@
 import torch
 import torch.nn as nn
+
+from backend.train_nn import ShaxNet
 from .utils import encode_board
-
-class ShaxNet(nn.Module):
-    def __init__(self, output_size):
-        super().__init__()
-        self.fc1 = nn.Linear(24, 128)
-        self.fc2 = nn.Linear(128, 128)
-        self.fc_policy = nn.Linear(128, output_size)
-        self.fc_value = nn.Linear(128, 1)
-
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        policy_logits = self.fc_policy(x)
-        value = torch.tanh(self.fc_value(x))
-        return policy_logits, value
-
-# Load Trained Models
 
 
 placement_model = ShaxNet(24)
@@ -52,7 +37,7 @@ def choose_move_from_nn(board,phase):
                 continue
             if dst not in adjacentLocations(src):  # ❗ No jumping
                 continue
-
+            
             return (src, dst)
 
         return None  # No valid move found
@@ -73,6 +58,4 @@ def choose_move_from_nn(board,phase):
             if board[move] == 'x':  # Find first empty spot
                 return move
 
-        return None  # No valid move
-
-
+        return None

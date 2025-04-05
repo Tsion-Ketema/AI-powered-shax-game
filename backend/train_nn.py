@@ -27,7 +27,7 @@ class ShaxDataset(Dataset):
                         else:
                             # Convert (src, dest) -> flat 576 space (24x24)
                             action_index = action[0] * 24 + action[1]
-                        reward = float(data["reward"])
+                        reward = float(data["reward"]) / 10.0
                         self.samples.append((state, action_index, reward, data["phase"]))
 
     def __len__(self):
@@ -44,30 +44,45 @@ class ShaxDataset(Dataset):
 class ShaxNet(nn.Module):
     def __init__(self, output_size):
         super().__init__()
-        self.fc1 = nn.Linear(24, 128)
-        self.fc2 = nn.Linear(128, 128)
-        self.fc_policy = nn.Linear(128, output_size)  # Output policy
-        self.fc_value = nn.Linear(128, 1)              # Output value
+        self.fc1 = nn.Linear(24, 256)
+        self.fc2 = nn.Linear(256, 256)
+        self.fc3 = nn.Linear(256, 128)
+        self.fc_policy = nn.Linear(128, output_size)
+        self.fc_value = nn.Linear(128, 1)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
+        x = torch.relu(self.fc3(x))
         policy_logits = self.fc_policy(x)
-        value = torch.tanh(self.fc_value(x))  # Output in range [-1, 1]
+        value = torch.tanh(self.fc_value(x))
         return policy_logits, value
 
-
-def train_model(epochs=10, batch_size=64, lr=1e-3):
+def train_model(epochs=10, batch_size=64, lr=1e-4, resume = True):
     print(f"Loading dataset... {log_dir}")
     dataset = ShaxDataset(log_dir)
     
-    # Check if the dataset is empty
+    phase_counts = {"placement": 0, "removal": 0, "movement": 0}
+    for _, _, _, phase in dataset:
+        if phase in phase_counts:
+            phase_counts[phase] += 1
+    print("Samples per phase:", phase_counts)
+
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     model_placement = ShaxNet(output_size=24).to(DEVICE)
     model_removal = ShaxNet(output_size=24).to(DEVICE)
     model_movement = ShaxNet(output_size=24 * 24).to(DEVICE)
+
+    if resume:
+        try:
+            model_placement.load_state_dict(torch.load("placement_model.pth", map_location=DEVICE))
+            model_removal.load_state_dict(torch.load("removal_model.pth", map_location=DEVICE))
+            model_movement.load_state_dict(torch.load("movement_model.pth", map_location=DEVICE))
+            print("✅ Resumed from existing models.")
+        except FileNotFoundError:
+            print("⚠️ Model files not found. Starting from scratch.")
 
     optimizer_placement = optim.Adam(model_placement.parameters(), lr=lr)
     optimizer_removal = optim.Adam(model_removal.parameters(), lr=lr)
@@ -89,7 +104,7 @@ def train_model(epochs=10, batch_size=64, lr=1e-3):
             actions = actions.to(DEVICE)
             rewards = rewards.to(DEVICE).view(-1, 1)
 
-            for phase in ["placement", "movement"]:
+            for phase in ["placement","removal", "movement"]:
                 phase_mask = [i for i, p in enumerate(phases) if p == phase]
                 if not phase_mask:
                     continue

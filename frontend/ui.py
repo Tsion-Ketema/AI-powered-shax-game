@@ -51,6 +51,7 @@ class MorrisGame:
         self.depth = 8
         self.blocked=False
         self.iteration= 15000
+        self.agent="mcts"
 
         # Capture tracking
         self.human_captures = 0
@@ -255,7 +256,10 @@ class MorrisGame:
 
     def ai_place(self):
         reward = 1
-        move = choose_move_from_nn(self.board, self.phase)
+        if self.agent=="mcts":
+             move = monte_carlo_tree_search(self.board, "2", self.phase)
+        elif self.agent=="nn":
+             move = choose_move_from_nn(self.board,self.phase)
         self.prev_board = self.board[:]
         self.board[move] = '2'
         if isMill(move, self.board):
@@ -276,7 +280,10 @@ class MorrisGame:
     def ai_move(self):
         reward = 0
 
-        move = choose_move_from_nn(self.board, self.phase)
+        if self.agent=="mcts":
+             move = monte_carlo_tree_search(self.board, "2", self.phase)
+        elif self.agent=="nn":
+             move = choose_move_from_nn(self.board,self.phase)
         if move is None:
             messagebox.showinfo("Blocked", "AI is blocked. Please make a move to free up space.")
             self.blocked = True
@@ -365,10 +372,12 @@ class MorrisGame:
         if ai_pieces < 3:
             messagebox.showinfo("Game Over", "You win!")
             self.human_game_log[-1]["reward"] += 10
+            self.human_game_log[-1]["done"] =True
             self.save_game_log()
             self.root.quit()
         elif human_pieces < 3:
             self.human_game_log[-1]["reward"] += 10
+            self.human_game_log[-1]["done"] =True
             messagebox.showinfo("Game Over", "You lose!")
             self.save_game_log()
             self.root.quit()
@@ -380,7 +389,7 @@ class MorrisGame:
             "reward": reward,
             "next_state": [0 if x == 'x' else int(x) for x in self.board],
             "done": done,
-            "phase": self.phase
+            "phase": "removal" if self.phase=="opening" else self.phase
         })
 
     def save_game_log(self):

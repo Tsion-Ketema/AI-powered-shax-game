@@ -6,13 +6,14 @@ from tkinter import messagebox
 from utils import adjacentLocations, isMill, numOfPieces
 from ai_minimax import get_possible_moves_player, minimax
 from ai_mcts import monte_carlo_tree_search
+from nn_player_self import choose_move_from_nn
 
 # ========================
 # AI Configuration
 # ========================
 AI_TYPE = {
-    "ai": "mcts",     # options: 'minimax' or 'mcts'
-    "ai2": "minimax"
+    "ai": "nn",     # options: 'minimax' or 'mcts'
+    "ai2": "mcts"
 }
 
 # Position coordinates for the board
@@ -71,6 +72,9 @@ class MorrisGame:
             if move is None:
                 return 0, None
             return 0, move
+        elif strategy == 'nn':
+            move = choose_move_from_nn(board,phase,player_symbol)
+            return 0, move
         else:
             raise ValueError(f"Unsupported AI strategy: {strategy}")
 
@@ -112,7 +116,7 @@ class MorrisGame:
         self.status_label.config(text=status_text)
 
     def start_game(self):
-        self.turn = "ai2"
+        self.turn = "ai"
         self.root.after(500, self.ai_place)
 
     def ai_place(self):
@@ -228,10 +232,14 @@ class MorrisGame:
         ai_pieces = numOfPieces(self.board, "1")
         ai2_pieces = numOfPieces(self.board, "2")
         if ai_pieces < 3:
+            self.game_log[-1]["reward"] += 10
+            self.game_log[-1]["done"] =True
             self.save_game_log()
             messagebox.showinfo("Game Over", "AI2 wins!")
             self.root.quit()
         elif ai2_pieces < 3:
+            self.game_log[-1]["reward"] += 10
+            self.game_log[-1]["done"] =True
             self.save_game_log()
             messagebox.showinfo("Game Over", "AI wins!")
             self.root.quit()
@@ -244,7 +252,7 @@ class MorrisGame:
             "reward": reward,
             "next_state": [0 if x == 'x' else int(x) for x in self.board],
             "done": done,
-            "phase": "removal" if self.phase == "opening" else self.phase,
+            "phase": "removal" if self.phase=="opening" else self.phase,
         })
 
     def save_game_log(self):

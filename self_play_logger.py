@@ -1,6 +1,6 @@
 import json
 import os
-from backend.ai import monte_carlo_tree_search, apply_place, apply_move, get_possible_moves_player, get_possible_moves
+from backend.ai_mcts import monte_carlo_tree_search, apply_place, apply_move, get_possible_moves_player, get_possible_moves
 from backend.nn_player import choose_move_from_nn
 from backend.utils import adjacentLocations, isMill, numOfPieces, encode_board
 

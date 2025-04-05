@@ -1,22 +1,7 @@
 import torch
 import torch.nn as nn
-from .utils import encode_board
-
-class ShaxNet(nn.Module):
-    def __init__(self, output_size):
-        super().__init__()
-        self.fc1 = nn.Linear(24, 128)
-        self.fc2 = nn.Linear(128, 128)
-        self.fc_policy = nn.Linear(128, output_size)
-        self.fc_value = nn.Linear(128, 1)
-
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        policy_logits = self.fc_policy(x)
-        value = torch.tanh(self.fc_value(x))
-        return policy_logits, value
-
+from train_nn import ShaxNet
+from utils import encode_board, adjacentLocations
 
 
 # Load Trained Models
@@ -28,13 +13,17 @@ movement_model = ShaxNet(24 * 24)
 movement_model.load_state_dict(torch.load("movement_model.pth", map_location=torch.device('cpu')))
 movement_model.eval()
 
+removal_model = ShaxNet(24)
+removal_model.load_state_dict(torch.load("removal_model.pth", map_location=torch.device('cpu')))
+removal_model.eval()
 
-from backend.utils import encode_board, adjacentLocations
 
-def choose_move_from_nn(board,player, is_movement_phase=True):
+
+def choose_move_from_nn(board, phase, player):
     input_tensor = encode_board(board)
+    opponent = "1" if player == "2" else "2"
 
-    if is_movement_phase:
+    if phase == "movement":
         logits, _ = movement_model(input_tensor)
         probs = torch.softmax(logits, dim=1).squeeze(0)
         sorted_indices = torch.argsort(probs, descending=True).tolist()
@@ -43,26 +32,34 @@ def choose_move_from_nn(board,player, is_movement_phase=True):
             src = index // 24
             dst = index % 24
 
-            if board[src] == player:      # Must own the piece
+            if board[src] != player:        # Own piece
                 continue
-            if board[dst] != 'x':      # Destination must be empty
+            if board[dst] != 'x':           # Destination must be empty
                 continue
-            if dst not in adjacentLocations(src):  # ❗ No jumping
+            if dst not in adjacentLocations(src):  # No jumping
                 continue
 
             return (src, dst)
+        return None
 
-        return None  # No valid move found
+    elif phase == "removal":
+        logits, _ = removal_model(input_tensor)
+        probs = torch.softmax(logits, dim=1).squeeze(0)
+        sorted_indices = torch.argsort(probs, descending=True).tolist()
 
-    else:
+        for move in sorted_indices:
+            if board[move] == opponent:
+                return move
+        return None
+
+    else:  # placement phase
         logits, _ = placement_model(input_tensor)
         probs = torch.softmax(logits, dim=1).squeeze(0)
         sorted_indices = torch.argsort(probs, descending=True).tolist()
 
         for move in sorted_indices:
-            if board[move] == 'x':  # Find first empty spot
+            if board[move] == 'x':
                 return move
-
-        return None  # No valid move
+        return None
 
 
