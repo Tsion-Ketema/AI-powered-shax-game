@@ -49,7 +49,7 @@ def is_valid_shax_move(prev_board, next_board, player, action, phase, first_jare
 
     return False, "Unknown phase"
 
-def verify_shax_games(log_dir="game_logs"):
+def verify_shax_games(log_dir="recorded_ai_games"):
     issues = []
     for filename in os.listdir(log_dir):
         if not filename.endswith(".jsonl"):

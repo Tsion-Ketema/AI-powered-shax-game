@@ -1,8 +1,8 @@
 import random
 import math
 
-from .train_nn import ShaxNet
-from .utils import mills, adjacentLocations, encode_board
+from train_nn import ShaxNet
+from utils import mills, adjacentLocations, encode_board
 import torch
 import torch.nn as nn
 import os
@@ -124,7 +124,7 @@ def simulate(node):
     return value.item()
 
 
-def monte_carlo_tree_search(initial_board, player, phase, iterations=1000):
+def monte_carlo_tree_search(initial_board, player, phase, iterations=5000):
     root = Node(initial_board, player, phase)
     for _ in range(iterations):
         node = root
@@ -176,7 +176,6 @@ def apply_move(board, pos1, pos2, player):
     return new_board
 
 def apply_removal(board, move):
-    print(f"[DEBUG] Applying Removal at Position: {move}")
     new_board = board[:]
     new_board[move] = 'x'
     return new_board
@@ -189,8 +188,6 @@ def apply_removal(board, move):
 
 def get_positions(board, player):
     positions = [i for i in range(len(board)) if board[i] == player]
-    print(f"[DEBUG] Positions for Player {player}: {positions}")
-    print(f"[DEBUG] Board State: {board}")
     return positions
 
 

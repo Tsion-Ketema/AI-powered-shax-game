@@ -12,8 +12,8 @@ from nn_player_self import choose_move_from_nn
 # AI Configuration
 # ========================
 AI_TYPE = {
-    "ai": "nn",     # options: 'minimax' or 'mcts'
-    "ai2": "mcts"
+    "ai": "mcts",     # options: 'minimax' or 'mcts'
+    "ai2": "nn"
 }
 
 # Position coordinates for the board
@@ -235,13 +235,13 @@ class MorrisGame:
             self.game_log[-1]["reward"] += 10
             self.game_log[-1]["done"] =True
             self.save_game_log()
-            messagebox.showinfo("Game Over", "AI2 wins!")
+            print("Game Over", "AI2 wins!")
             self.root.quit()
         elif ai2_pieces < 3:
             self.game_log[-1]["reward"] += 10
             self.game_log[-1]["done"] =True
             self.save_game_log()
-            messagebox.showinfo("Game Over", "AI wins!")
+            print("Game Over", "AI wins!")
             self.root.quit()
 
     def record_move(self, player, action, reward, done):
@@ -263,6 +263,11 @@ class MorrisGame:
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    game = MorrisGame(root)
-    root.mainloop()
+    NUM_GAMES = 10  # change to any number you want
+
+    for i in range(NUM_GAMES):
+        print(f"\n🔁 Starting Game {i+1}/{NUM_GAMES}")
+        root = tk.Tk()
+        game = MorrisGame(root)
+        root.mainloop()
+        root.destroy()
