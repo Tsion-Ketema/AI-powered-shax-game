@@ -239,7 +239,7 @@ class MorrisGame:
                 self.board[pos] = "2"
                 if isMill(pos, self.board):
                     print(f"AI placed piece at {pos} to form a mill.")
-                    self.board[pos] = "2"
+                    # self.board[pos] = "2"(no need since we already set it above)
                     is_placed = True
                     if isMill(pos, self.board):
                         if self.first_mill is None:  # Check if this is the first mill
@@ -266,6 +266,7 @@ class MorrisGame:
     def ai_move(self):
         is_moved = False
         moves = get_possible_moves_player(self.board, "2")
+
         if not moves:
             messagebox.showinfo(
                 "Blocked", "AI is blocked. Please make a move to free up space.")
@@ -294,16 +295,43 @@ class MorrisGame:
             self.board[dest] = "2"
             for mill in mills:
                 if dest in mill and any(self.board[pos] == "1" for pos in mill):
-                    print(f"AI moved from {src} to {dest} to block the human.")
-                    is_moved = True
-                    break
-            if is_moved:
+                    print(
+                        f"AI moved from {src} to {dest} to block the human.")
+                    self.board[src] = "x"
+                    self.board[dest] = "2"
+                    self.update_board()
+                    self.check_win_conditions()
+                    self.turn = "human"
+                    return
+            self.board[src] = "2"
+            self.board[dest] = "x"
+
+        # Step 3 (New Idea): Try to block potential back-and-forth mill reformation by the human
+        for src, dest in moves:
+            self.board[src] = "x"
+            self.board[dest] = "2"
+            backforth_threat = False
+            for mill in mills:
+                if any(self.board[p] == "1" for p in mill) and dest in mill:
+                    human_positions = [
+                        p for p in mill if self.board[p] == "1"]
+                    empty_positions = [
+                        p for p in mill if self.board[p] == "x"]
+                    if len(human_positions) == 2 and len(empty_positions) == 1:
+                        backforth_threat = True
+                        break
+            self.board[src] = "2"
+            self.board[dest] = "x"
+            if backforth_threat:
+                print(
+                    f"AI moved from {src} to {dest} to block potential human back-and-forth mill.")
+                self.board[src] = "x"
+                self.board[dest] = "2"
                 self.update_board()
-                self.check_win_conditions()
                 self.turn = "human"
                 return
 
-        # Step 3: Use minimax
+        # Step 4: Use minimax
         evaluation, move = minimax(
             self.board, self.depth, self.alpha, self.beta, True, True, "movement")
         source, dest = move
@@ -326,6 +354,7 @@ class MorrisGame:
             self.ai_captures += 1
             print(f"AI removed human piece at {pos} ({reason})")
             self.update_board()
+            self.check_win_conditions()  # Ensure win condition is checked immediately
             self.removal_phase = False
 
             if self.phase == "opening":
@@ -342,20 +371,17 @@ class MorrisGame:
             else:
                 self.turn = "human"
 
-            self.update_board()  # Ensure UI is refreshed
+            self.update_board()
 
-      # Step 1: Movement phase logic - prioritize removing double opportunity pieces
+        # Step 1: Movement phase logic - prioritize removing double opportunity pieces and back-and-forth threats
         if self.phase == "movement":
             # Track already formed mills by the human
-            # Pass the board as the second argument
             human_mills = get_formed_mills("1", self.board)
 
             # Check for pieces enabling back-and-forth mill recreation
             for mill in human_mills:
                 for pos in mill:
-                    # Check if removing this piece prevents back-and-forth mill recreation
                     adjacent_positions = adjacentLocations(pos)
-                    # Check for adjacent empty spots
                     if any(self.board[adj] == "x" for adj in adjacent_positions):
                         remove_piece(pos, "back-and-forth mill prevention")
                         return
@@ -376,7 +402,6 @@ class MorrisGame:
                 for mill in mills:
                     if pos in mill and all(self.board[p] in ["2", "x"] for p in mill):
                         if any(self.board[adj] == "2" for adj in adjacentLocations(pos)):
-                            # Simulate the move to confirm the mill
                             self.board[pos] = "x"
                             for adj in adjacentLocations(pos):
                                 if self.board[adj] == "2":
@@ -389,7 +414,7 @@ class MorrisGame:
                                     self.board[adj] = "2"
                             self.board[pos] = "1"
 
-  # Step 3: Opening phase logic - disrupt human mills
+        # Step 3: Opening phase logic - disrupt human mills
         for pos, piece in enumerate(self.board):
             if piece == "1":
                 for mill in mills:
@@ -401,12 +426,12 @@ class MorrisGame:
                         if human_count == 2 and empty_count == 1:
                             remove_piece(pos, "disrupt human mill")
                             if self.phase == "opening":
-                                self.opening_count -= 1  # Decrement opening count
+                                self.opening_count -= 1
                             if self.phase == "opening" and self.opening_count == 0:
-                                self.phase = "movement"  # Transition to movement phase
+                                self.phase = "movement"
                             return
 
-        # Step 4: Fallback - remove blocking pieces or the first available piece
+        # Step 4: Blocking logic that opens space but tries to avoid benefiting the opponent
         for pos, piece in enumerate(self.board):
             if piece == "2":
                 for adj_pos in adjacentLocations(pos):
@@ -416,19 +441,49 @@ class MorrisGame:
                                 blocking_pos = [
                                     p for p in mill if p != pos and p != adj_pos][0]
                                 if self.board[blocking_pos] == "1":
-                                    remove_piece(
-                                        blocking_pos, "blocking AI mill")
-                                    if self.phase == "opening":
-                                        self.opening_count -= 1
-                                    self.check_win_conditions()
-                                    if self.phase == "opening" and self.opening_count == 0:
-                                        self.phase = "movement"
-                                    return
-            if piece == "1":  # Fallback to removing the first available human piece
+                                    # Check that this removal doesn't give human an immediate mill
+                                    self.board[blocking_pos] = "x"
+                                    opponent_can_form_mill = any(
+                                        isMill(p, self.board) for p in range(len(self.board)) if self.board[p] == "1")
+                                    self.board[blocking_pos] = "1"
+                                    if not opponent_can_form_mill:
+                                        remove_piece(
+                                            blocking_pos, "blocking AI mill without aiding opponent")
+                                        if self.phase == "opening":
+                                            self.opening_count -= 1
+                                        self.check_win_conditions()
+                                        if self.phase == "opening" and self.opening_count == 0:
+                                            self.phase = "movement"
+                                        return
+
+        # Step 5: Fallback - remove the first available human piece
+        for pos, piece in enumerate(self.board):
+            if piece == "1":
                 remove_piece(pos, "fallback")
                 break
 
-        # Step 5: Update game state after removal
+        # Step 6 (New Strategy): AI uses back-and-forth strategy itself if no better option
+        if self.phase == "movement":
+            for src, piece in enumerate(self.board):
+                if piece == "2":
+                    for dest in adjacentLocations(src):
+                        if self.board[dest] == "x":
+                            self.board[src] = "x"
+                            self.board[dest] = "2"
+                            if isMill(dest, self.board):
+                                self.board[dest] = "x"
+                                self.board[src] = "2"
+                                # NEW STRATEGY IMPLEMENTED
+                                remove_piece(
+                                    src, "AI using back-and-forth mill strategy")
+                                return
+                            self.board[dest] = "x"
+                            self.board[src] = "2"
+
+        # Step 7 (New Idea): AI tries to block potential back-and-forth reformation via placement logic (evaluated externally in ai_move)
+        # NOTE: This strategy should be handled during move decision, not in removal logic.
+
+        # Final Phase Transition if still in opening phase
         if self.phase == "opening":
             self.opening_count -= 1
             if self.opening_count == 0:
