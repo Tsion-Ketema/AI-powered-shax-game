@@ -264,8 +264,6 @@ class MorrisGame:
             self.removal_phase = True
 
     def ai_move(self):
-        # Here also i add some stuffs
-        # Step 1: Prioritize moves that form mills
         is_moved = False
         moves = get_possible_moves_player(self.board, "2")
         if not moves:
@@ -275,11 +273,10 @@ class MorrisGame:
             self.blocked = True
             return
 
-        for move in moves:
-            src, dest = move
+        # Step 1: Try forming a mill
+        for src, dest in moves:
             self.board[src] = "x"
             self.board[dest] = "2"
-
             if isMill(dest, self.board):
                 print(f"AI moved from {src} to {dest} to form a mill.")
                 self.update_board()
@@ -291,110 +288,161 @@ class MorrisGame:
             self.board[src] = "2"
             self.board[dest] = "x"
 
-        if not is_moved:
-            # Step Prioritize moves that block the human from forming mills
-            for move in moves:
-                src, dest = move
-                self.board[src] = "x"
-                self.board[dest] = "2"
-                for mill in mills:
-                    if dest in mill and any(self.board[pos] == "1" for pos in mill):
-                        print(
-                            f"AI moved from {src} to {dest} to block the human.")
-                        is_moved = True
-                        break
-                if is_moved:
+        # Step 2: Try blocking human mills
+        for src, dest in moves:
+            self.board[src] = "x"
+            self.board[dest] = "2"
+            for mill in mills:
+                if dest in mill and any(self.board[pos] == "1" for pos in mill):
+                    print(f"AI moved from {src} to {dest} to block the human.")
+                    is_moved = True
                     break
-            # what i added ended here
-        if not is_moved:
-            # Step 3: Fallback to minimax
-            evaluation, move = minimax(
-                self.board, self.depth, self.alpha, self.beta, True, True)
-            source, dest = move
-            self.board[source] = 'x'
-            self.board[dest] = '2'
-            print(f"AI moved from {source} to {dest} with minimax")
+            if is_moved:
+                self.update_board()
+                self.check_win_conditions()
+                self.turn = "human"
+                return
+
+        # Step 3: Use minimax
+        evaluation, move = minimax(
+            self.board, self.depth, self.alpha, self.beta, True, True, "movement")
+        source, dest = move
+        self.board[source] = 'x'
+        self.board[dest] = '2'
+        print(f"AI moved from {source} to {dest} with minimax")
+
         self.update_board()
         self.check_win_conditions()
         self.turn = "human"
 
     def ai_remove(self):
         """
-        AI removal routine: remove one of the human's pieces.
-        Prioritize removing a human piece that blocks the AI from forming a mill,
-        and ensure there is another AI piece that can later move into the vacant space.
+        AI removal routine: intelligently remove one of the human's pieces.
+        Handles both the opening and movement phases with prioritized logic.
         """
-        # Step 1: Search for AI pieces with potential mills
+        def remove_piece(pos, reason):
+            """Helper function to remove a human piece and update the game state."""
+            self.board[pos] = "x"
+            self.ai_captures += 1
+            print(f"AI removed human piece at {pos} ({reason})")
+            self.update_board()
+            self.removal_phase = False
+
+            if self.phase == "opening":
+                self.opening_count -= 1
+                if self.opening_count == 0:
+                    self.phase = "movement"
+                    self.turn = "human"
+                    print(
+                        "Opening phase complete. Movement phase begins. Human's turn.")
+                else:
+                    messagebox.showinfo(
+                        "Opening Phase", "Now it's your turn to remove one AI piece.")
+                    self.removal_phase = True
+            else:
+                self.turn = "human"
+
+            self.update_board()  # Ensure UI is refreshed
+
+      # Step 1: Movement phase logic - prioritize removing double opportunity pieces
+        if self.phase == "movement":
+            # Track already formed mills by the human
+            # Pass the board as the second argument
+            human_mills = get_formed_mills("1", self.board)
+
+            # Check for pieces enabling back-and-forth mill recreation
+            for mill in human_mills:
+                for pos in mill:
+                    # Check if removing this piece prevents back-and-forth mill recreation
+                    adjacent_positions = adjacentLocations(pos)
+                    # Check for adjacent empty spots
+                    if any(self.board[adj] == "x" for adj in adjacent_positions):
+                        remove_piece(pos, "back-and-forth mill prevention")
+                        return
+
+            # Check for other double opportunity pieces dynamically
+            for pos, piece in enumerate(self.board):
+                if piece == "1":
+                    for mill in mills:
+                        if pos in mill and all(self.board[p] in ["1", "x"] for p in mill):
+                            if any(self.board[adj] == "x" for adj in adjacentLocations(pos)):
+                                remove_piece(
+                                    pos, "double opportunity prevention")
+                                return
+
+        # Step 2: Opening phase logic - prioritize guaranteed AI mills
         for pos, piece in enumerate(self.board):
-            if piece == "2":  # Check AI pieces
-                # Get all adjacent positions for this AI piece
-                adjacent_positions = adjacentLocations(pos)
-                for adj_pos in adjacent_positions:
-                    # Check if adjacent position is also an AI piece
+            if piece == "1":
+                for mill in mills:
+                    if pos in mill and all(self.board[p] in ["2", "x"] for p in mill):
+                        if any(self.board[adj] == "2" for adj in adjacentLocations(pos)):
+                            # Simulate the move to confirm the mill
+                            self.board[pos] = "x"
+                            for adj in adjacentLocations(pos):
+                                if self.board[adj] == "2":
+                                    self.board[adj] = "x"
+                                    if isMill(adj, self.board):
+                                        self.board[adj] = "2"
+                                        remove_piece(
+                                            pos, "guaranteed mill opportunity")
+                                        return
+                                    self.board[adj] = "2"
+                            self.board[pos] = "1"
+
+  # Step 3: Opening phase logic - disrupt human mills
+        for pos, piece in enumerate(self.board):
+            if piece == "1":
+                for mill in mills:
+                    if pos in mill:
+                        human_count = sum(
+                            1 for p in mill if self.board[p] == "1")
+                        empty_count = sum(
+                            1 for p in mill if self.board[p] == "x")
+                        if human_count == 2 and empty_count == 1:
+                            remove_piece(pos, "disrupt human mill")
+                            if self.phase == "opening":
+                                self.opening_count -= 1  # Decrement opening count
+                            if self.phase == "opening" and self.opening_count == 0:
+                                self.phase = "movement"  # Transition to movement phase
+                            return
+
+        # Step 4: Fallback - remove blocking pieces or the first available piece
+        for pos, piece in enumerate(self.board):
+            if piece == "2":
+                for adj_pos in adjacentLocations(pos):
                     if self.board[adj_pos] == "2":
-                        # Check for a potential mill with a blocking human piece
                         for mill in mills:
-                            if pos in mill and adj_pos in mill:  # Both AI pieces are part of the same mill
-                                # Find the third position in the mill
+                            if pos in mill and adj_pos in mill:
                                 blocking_pos = [
                                     p for p in mill if p != pos and p != adj_pos][0]
-                                # Debug: Check the blocking position
-                                print(
-                                    f"Checking mill: {mill}, blocking position: {blocking_pos}")
-                                # Check if the third position is a human piece
                                 if self.board[blocking_pos] == "1":
-                                    # Debug: Blocking piece found
-                                    print(
-                                        f"Blocking piece found at {blocking_pos}")
-                                    # Check if there is another AI piece adjacent to the blocking position
-                                    backup_positions = adjacentLocations(
-                                        blocking_pos)
-                                    for backup_pos in backup_positions:
-                                        if self.board[backup_pos] == "2":
-                                            # Debug: Backup piece found
-                                            print(
-                                                f"Backup piece {backup_pos} found for blocking position {blocking_pos}")
-                                            # Remove the blocking human piece
-                                            self.board[blocking_pos] = "x"
-                                            print(
-                                                f"AI removed blocking piece at {blocking_pos}")
-                                            self.ai_captures += 1
-                                            self.update_board()
-                                            self.removal_phase = False
-                                            if self.phase == "opening":
-                                                self.opening_count -= 1
-                                            self.check_win_conditions()
-                                            self.turn = "human"
-                                            if self.phase == "opening" and self.opening_count == 0:
-                                                self.phase = "movement"
-                                            elif self.opening_count != 0:
-                                                messagebox.showinfo(
-                                                    "Opening Phase", "Now it's your turn to remove one AI piece.")
-                                                self.removal_phase = True
-                                            return
-
-        # Step 2: If no blocking piece is found, remove the first available human piece
-        for pos, piece in enumerate(self.board):
-            if piece == "1":  # Find the first human piece
-                print(
-                    f"No blocking piece found. Removing first available piece at {pos}")
-                self.board[pos] = "x"
-                self.ai_captures += 1
+                                    remove_piece(
+                                        blocking_pos, "blocking AI mill")
+                                    if self.phase == "opening":
+                                        self.opening_count -= 1
+                                    self.check_win_conditions()
+                                    if self.phase == "opening" and self.opening_count == 0:
+                                        self.phase = "movement"
+                                    return
+            if piece == "1":  # Fallback to removing the first available human piece
+                remove_piece(pos, "fallback")
                 break
 
-        # Update the game state after removal
-        self.removal_phase = False
+        # Step 5: Update game state after removal
         if self.phase == "opening":
             self.opening_count -= 1
-        self.update_board()
-        self.check_win_conditions()
-        self.turn = "human"
-        if self.phase == "opening" and self.opening_count == 0:
-            self.phase = "movement"
-        elif self.opening_count != 0:
-            messagebox.showinfo(
-                "Opening Phase", "Now it's your turn to remove one AI piece.")
-            self.removal_phase = True
+            if self.opening_count == 0:
+                self.phase = "movement"
+                self.removal_phase = False
+                self.turn = "human"
+                self.update_board()
+            else:
+                messagebox.showinfo(
+                    "Opening Phase", "Now it's your turn to remove one AI piece.")
+                self.removal_phase = True
+        else:
+            self.turn = "human"
+            self.update_board()
 
     def ai_forced_move_no_capture(self):
         """

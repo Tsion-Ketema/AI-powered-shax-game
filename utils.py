@@ -43,6 +43,15 @@ def remove_non_mill_piece(board, player):
     return False
 
 
+def get_formed_mills(player, board):
+    """Returns a list of mills currently formed by the specified player."""
+    formed_mills = []
+    for mill in mills:
+        if all(board[pos] == player for pos in mill):
+            formed_mills.append(mill)
+    return formed_mills
+
+
 def removePiece(board, player):
     opponent = "2" if player == "1" else "1"
     for pos in range(len(board)):
