@@ -172,6 +172,7 @@ class MorrisGame:
                 else:
                     self.check_win_conditions()
                     self.turn = "ai"
+                    self.blocked = False
                     self.root.after(500, self.ai_move)
         else:
             return
