@@ -67,7 +67,7 @@ def select_capture_position(board):
 
 
 def evaluate(board):
-    CAPTURE_BONUS = 200
+    CAPTURE_BONUS = 100
     BLOCK_BONUS = 100
     THREAT_PENALTY = 50       # Penalty for opponent's threats
     AI_THREAT_BONUS = 30      # Bonus for AI's own threats

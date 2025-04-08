@@ -234,19 +234,19 @@ class MorrisGame:
         # This is what i add
         # Explicit logic for blocking or forming mills
         is_placed = False
-        for pos in range(len(self.board)):
-            if self.board[pos] == "x":
-                self.board[pos] = "2"
-                if isMill(pos, self.board):
-                    print(f"AI placed piece at {pos} to form a mill.")
-                    # self.board[pos] = "2"(no need since we already set it above)
-                    is_placed = True
-                    if isMill(pos, self.board):
-                        if self.first_mill is None:  # Check if this is the first mill
-                            self.first_mill = "ai"
-                    break
-                self.board[pos] = "x"
-        # ****Ended here*****
+        # for pos in range(len(self.board)):
+        #     if self.board[pos] == "x":
+        #         self.board[pos] = "2"
+        #         if isMill(pos, self.board):
+        #             print(f"AI placed piece at {pos} to form a mill.")
+        #             # self.board[pos] = "2"(no need since we already set it above)
+        #             is_placed = True
+        #             if isMill(pos, self.board):
+        #                 if self.first_mill is None:  # Check if this is the first mill
+        #                     self.first_mill = "ai"
+        #             break
+        #         self.board[pos] = "x"
+        # # ****Ended here*****
         if not is_placed:
             evaluation, move = minimax(
                 self.board, self.depth,  self.alpha, self.beta, True, False)
@@ -294,15 +294,15 @@ class MorrisGame:
             self.board[src] = "x"
             self.board[dest] = "2"
             for mill in mills:
-                if dest in mill and any(self.board[pos] == "1" for pos in mill):
-                    print(
-                        f"AI moved from {src} to {dest} to block the human.")
-                    self.board[src] = "x"
-                    self.board[dest] = "2"
-                    self.update_board()
-                    self.check_win_conditions()
-                    self.turn = "human"
-                    return
+                if dest in mill:
+                    count = sum(1 for i in mill if self.board[i] == "1")
+                    if count > 2:
+                        print(
+                            f"AI moved from {src} to {dest} to block the human.")
+                        self.update_board()
+                        self.check_win_conditions()
+                        self.turn = "human"
+                        return
             self.board[src] = "2"
             self.board[dest] = "x"
 
@@ -333,7 +333,7 @@ class MorrisGame:
 
         # Step 4: Use minimax
         evaluation, move = minimax(
-            self.board, self.depth, self.alpha, self.beta, True, True, "movement")
+            self.board, self.depth, self.alpha, self.beta, True, True)
         source, dest = move
         self.board[source] = 'x'
         self.board[dest] = '2'
