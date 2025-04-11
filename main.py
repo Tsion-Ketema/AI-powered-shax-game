@@ -1,7 +1,7 @@
-from ui import MorrisGame
+from ui import ShaxGame
 import tkinter as tk
 
 if __name__ == "__main__":
     root = tk.Tk()
-    game = MorrisGame(root)
+    game = ShaxGame(root)
     root.mainloop()

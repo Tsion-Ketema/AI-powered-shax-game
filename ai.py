@@ -36,6 +36,20 @@ def apply_move(board, pos1, pos2, player):
     return new_board
 
 
+def opponent_can_form_mill(board_state):
+    """
+    Check if the opponent (player '1') can form a mill on the given board state.
+    """
+    for pos in range(len(board_state)):
+        if board_state[pos] == 'x':  # empty spot
+            board_state[pos] = '1'   # simulate placing a human piece
+            if isMill(pos, board_state):
+                board_state[pos] = 'x'  # revert
+                return True
+            board_state[pos] = 'x'  # revert
+    return False
+
+
 def select_capture_position(board):
     # Prioritize removing opponent's mills or strategic positions
     opponent_pieces = [i for i in range(len(board)) if board[i] == '1']
