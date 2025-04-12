@@ -119,13 +119,13 @@ def evaluate(board):
                     if board[shared_pos] == '2':  # AI controls shared position
                         score += DOUBLE_THREAT_BONUS
 
-    # 3. Strategic Positions
-    strategic_positions = [4, 10, 13, 19]  # Example strategic positions
-    for pos in strategic_positions:
-        if board[pos] == '2':
-            score += STRATEGIC_POSITION_BONUS
-        elif board[pos] == '1':
-            score -= STRATEGIC_POSITION_BONUS
+    # # 3. Strategic Positions
+    # strategic_positions = [4, 10, 13, 19]  # Example strategic positions
+    # for pos in strategic_positions:
+    #     if board[pos] == '2':
+    #         score += STRATEGIC_POSITION_BONUS
+    #     elif board[pos] == '1':
+    #         score -= STRATEGIC_POSITION_BONUS
 
     # 4. Mobility
     ai_moves = len(get_possible_moves_player(board, '2'))

@@ -233,6 +233,24 @@ class ShaxGame:
 
     def ai_place(self):
         is_placed = False
+
+        # Step 1: Check if the human has a potential mill and block it
+        for pos in range(len(self.board)):
+            if self.board[pos] == "x":  # Check empty positions
+                # Temporarily simulate human placing a piece
+                self.board[pos] = "1"
+                if isMill(pos, self.board):  # Check if this forms a mill for the human
+                    # Block the mill by placing AI's piece
+                    self.board[pos] = "2"
+                    if isMill(pos, self.board):
+                        if self.first_mill is None:  # Check if this is the first mill
+                            self.first_mill = "ai"  # Record that the AI formed the first mill
+                    print(f"AI placed at {pos} to block human mill formation.")
+                    is_placed = True
+                    break
+                self.board[pos] = "x"  # Restore the board if no mill is formed
+
+        # Step 2: Use minimax algorithm
         if not is_placed:
             evaluation, move = minimax(
                 self.board, self.depth,  self.alpha, self.beta, True, False)
@@ -329,14 +347,15 @@ class ShaxGame:
             if self.board[src] == "2" and self.board[dest] == "x":
                 for mill in mills:
                     if src in mill and all(self.board[p] == "2" for p in mill):
-                        # Safe to vacate?
-                        if any(self.board[adj] == "1" for adj in adjacentLocations(src)):
-                            continue  # Not safe
+                        # Safe to vacate unless it forms a mill
+                        if any(self.board[adj] == "1" for adj in adjacentLocations(src)) and not isMill(dest, self.board):
+                            continue  # Not safe unless it forms a mill
 
                         # Try simulating back and forth
                         self.board[src] = "x"
                         self.board[dest] = "2"
                         if isMill(dest, self.board):
+                            # Simulate moving back to src
                             self.board[dest] = "x"
                             self.board[src] = "2"
                             self.board[src] = "x"
@@ -348,6 +367,7 @@ class ShaxGame:
                                 self.removal_phase = True
                                 self.root.after(500, self.ai_remove)
                                 return
+                        # Reset the board
                         self.board[dest] = "x"
                         self.board[src] = "2"
 
@@ -581,38 +601,6 @@ class ShaxGame:
         self.update_board()
         self.check_win_conditions()
         self.turn = "human"
-
-    # def ai_forced_move_no_capture(self):
-    #     """
-    #     When the human is blocked, force the AI to move to free up space.
-    #     During these moves, even if a mill is formed, no capture occurs.
-    #     """
-    #     moves = get_possible_moves_player(self.board, "2")
-
-    #     for move in moves:
-    #         src, dest = move
-    #         adjacent = adjacentLocations(src)
-    #         for j in random.choices(adjacent):
-    #             if self.board[j] == '1':
-    #                 self.board[src] = 'x'
-    #                 self.board[dest] = '2'
-    #                 print(f"AI block removal move from {src} to {dest}")
-    #                 self.update_board()
-    #                 return
-
-    #     if not get_possible_moves_player(self.board, "2"):
-    #         messagebox.showinfo(
-    #             "Blocked", "AI is blocked too. No move can be made.")
-    #         return
-    #     evaluation, move = minimax(
-    #         self.board, self.depth, self.alpha, self.beta, True, True)
-    #     if move is None:
-    #         messagebox.showinfo(
-    #             "Blocked", "AI is blocked. No move can be made.")
-    #         return
-    #     self.update_board()
-    #     self.check_win_conditions()
-    #     self.turn = "human"
 
     def check_win_conditions(self):
         human_pieces = numOfPieces(self.board, "1")
