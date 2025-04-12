@@ -312,6 +312,14 @@ class ShaxGame:
                     f"AI moved from {src} to {dest} to block human back-and-forth mill.")
                 self.board[src] = "x"
                 self.board[dest] = "2"
+                if isMill(dest, self.board):
+                            print(f"AI moved from {src} to {dest} to form a mill while blocking potential back-and-forth mill.")
+                            self.update_board()
+                            messagebox.showinfo(
+                                "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
+                            self.removal_phase = True
+                            self.root.after(500, self.ai_remove)
+                            return
                 self.update_board()
                 self.turn = "human"
                 return
@@ -338,6 +346,14 @@ class ShaxGame:
                     f"AI moved from {src} to {dest} to block a double opportunity threat.")
                 self.board[src] = "x"
                 self.board[dest] = "2"
+                if isMill(dest, self.board):
+                            print(f"AI moved from {src} to {dest} to form a mill while blocking double opportunity threat.")
+                            self.update_board()
+                            messagebox.showinfo(
+                                "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
+                            self.removal_phase = True
+                            self.root.after(500, self.ai_remove)
+                            return
                 self.update_board()
                 self.turn = "human"
                 return
@@ -348,28 +364,36 @@ class ShaxGame:
                 for mill in mills:
                     if src in mill and all(self.board[p] == "2" for p in mill):
                         # Safe to vacate unless it forms a mill
-                        if any(self.board[adj] == "1" for adj in adjacentLocations(src)) and not isMill(dest, self.board):
+                        if any(self.board[adj] == "1" for adj in adjacentLocations(src)) and all(self.board[adj] != "x" for adj in adjacentLocations(src)):
                             continue  # Not safe unless it forms a mill
-
-                        # Try simulating back and forth
-                        self.board[src] = "x"
-                        self.board[dest] = "2"
-                        if isMill(dest, self.board):
-                            # Simulate moving back to src
-                            self.board[dest] = "x"
-                            self.board[src] = "2"
-                            self.board[src] = "x"
-                            self.board[dest] = "2"
+                        else:
+                            empty_space = []
+                            safe_target = []
+                            for i in adjacentLocations(src):
+                                if self.board[i]=="x":
+                                    empty_space.append(i)
+                            for pos in empty_space:
+                               if any(self.board[adj] == "1" for adj in adjacentLocations(pos)):
+                                   continue
+                               else:
+                                   safe_target.append(pos)
+                            if not safe_target:
+                               self.board[src] = "x"
+                               self.board[dest] = "2"
+                            else:
+                                self.board[src]="x"
+                                self.board[safe_target[0]]="2"
                             if isMill(dest, self.board):
-                                print(
-                                    f"AI recreates a mill via {src} → {dest} → {src}")
+                                print(f"AI moved from {src} to {dest} to back and forth mill.")
                                 self.update_board()
+                                messagebox.showinfo(
+                                    "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
                                 self.removal_phase = True
                                 self.root.after(500, self.ai_remove)
-                                return
-                        # Reset the board
-                        self.board[dest] = "x"
-                        self.board[src] = "2"
+                            self.update_board()
+                            self.check_win_conditions()
+                            self.turn = "human"
+                            return
 
         # Step 6: Use minimax (last but not least)
         evaluation, move = minimax(
