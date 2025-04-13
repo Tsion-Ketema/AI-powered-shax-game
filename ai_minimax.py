@@ -154,6 +154,7 @@ def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase)
             max_eval = float('-inf')
             best_move = None
             available_moves = get_possible_moves_player(board, player)
+            random.shuffle(available_moves)
             if available_moves:
                 best_move = available_moves[0]
             for source, dest in available_moves:
@@ -173,7 +174,9 @@ def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase)
         else:
             max_eval = float('-inf')
             best_move = None
-            for move in get_possible_moves(board):
+            moves = get_possible_moves(board)
+            random.shuffle(moves)
+            for move in moves:
                 # Apply the placement
                 new_board = apply_place(board, move, player)
                 eval, _ = minimax(new_board, depth-1, alpha,
@@ -192,7 +195,9 @@ def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase)
         if is_movement_phase:
             min_eval = float('inf')
             best_move = None
-            for source, dest in get_possible_moves_player(board, opponent):
+            available_moves = get_possible_moves_player(board, opponent)
+            random.shuffle(available_moves)
+            for source, dest in available_moves:
                 # Apply the move
                 new_board = apply_move(board, source, dest, opponent)
                 eval, _ = minimax(new_board, depth-1, alpha,
@@ -209,7 +214,9 @@ def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase)
         else:
             min_eval = float('inf')
             best_move = None
-            for move in get_possible_moves(board):
+            moves = get_possible_moves(board)
+            random.shuffle(moves)
+            for move in moves:
                 # Apply the placement
                 new_board = apply_place(board, move, opponent)
                 eval, _ = minimax(new_board, depth-1, alpha,
