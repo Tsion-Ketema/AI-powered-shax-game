@@ -40,7 +40,7 @@ class ShaxGame:
         self.opening_count = 2
         self.alpha = float('-inf')
         self.beta = float('inf')
-        self.depth = 4
+        self.depth = 5
         self.blocked = False
 
         # Capture tracking
@@ -234,21 +234,21 @@ class ShaxGame:
     def ai_place(self):
         is_placed = False
 
-        # Step 1: Check if the human has a potential mill and block it
-        for pos in range(len(self.board)):
-            if self.board[pos] == "x":  # Check empty positions
-                # Temporarily simulate human placing a piece
-                self.board[pos] = "1"
-                if isMill(pos, self.board):  # Check if this forms a mill for the human
-                    # Block the mill by placing AI's piece
-                    self.board[pos] = "2"
-                    if isMill(pos, self.board):
-                        if self.first_mill is None:  # Check if this is the first mill
-                            self.first_mill = "ai"  # Record that the AI formed the first mill
-                    print(f"AI placed at {pos} to block human mill formation.")
-                    is_placed = True
-                    break
-                self.board[pos] = "x"  # Restore the board if no mill is formed
+        # # Step 1: Check if the human has a potential mill and block it
+        # for pos in range(len(self.board)):
+        #     if self.board[pos] == "x":  # Check empty positions
+        #         # Temporarily simulate human placing a piece
+        #         self.board[pos] = "1"
+        #         if isMill(pos, self.board):  # Check if this forms a mill for the human
+        #             # Block the mill by placing AI's piece
+        #             self.board[pos] = "2"
+        #             if isMill(pos, self.board):
+        #                 if self.first_mill is None:  # Check if this is the first mill
+        #                     self.first_mill = "ai"  # Record that the AI formed the first mill
+        #             print(f"AI placed at {pos} to block human mill formation.")
+        #             is_placed = True
+        #             break
+        #         self.board[pos] = "x"  # Restore the board if no mill is formed
 
         # Step 2: Use minimax algorithm
         if not is_placed:
@@ -292,6 +292,8 @@ class ShaxGame:
                 return
             self.board[src] = "2"
             self.board[dest] = "x"
+        
+        
 
         # Step 2: Try to move the ai piece to block potential back-and-forth mill reformation by the human.
         for src, dest in moves:
@@ -323,41 +325,6 @@ class ShaxGame:
                 self.update_board()
                 self.turn = "human"
                 return
-
-        # Step 4: Try moving the AI Piece to the postion of blocking double opportunity threat made by the opponet.
-        for src, dest in moves:
-            self.board[src] = "x"
-            self.board[dest] = "2"
-            blocked = False
-            for pos, piece in enumerate(self.board):
-                if piece == "1":
-                    threat_count = 0
-                    for mill in mills:
-                        if pos in mill and all(self.board[p] in ["1", "x"] for p in mill):
-                            threat_count += 1
-                    if threat_count >= 2:
-                        if dest == pos:
-                            blocked = True
-                            break
-            self.board[src] = "2"
-            self.board[dest] = "x"
-            if blocked:
-                print(
-                    f"AI moved from {src} to {dest} to block a double opportunity threat.")
-                self.board[src] = "x"
-                self.board[dest] = "2"
-                if isMill(dest, self.board):
-                            print(f"AI moved from {src} to {dest} to form a mill while blocking double opportunity threat.")
-                            self.update_board()
-                            messagebox.showinfo(
-                                "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
-                            self.removal_phase = True
-                            self.root.after(500, self.ai_remove)
-                            return
-                self.update_board()
-                self.turn = "human"
-                return
-
         # Step 5: Try to recreate a mill by moving back and forth for iself (the last best thing it can do for iself (almot bay tegaday staff)
         for src, dest in moves:
             if self.board[src] == "2" and self.board[dest] == "x":
@@ -394,6 +361,40 @@ class ShaxGame:
                             self.check_win_conditions()
                             self.turn = "human"
                             return
+
+        # Step 4: Try moving the AI Piece to the postion of blocking double opportunity threat made by the opponet.
+        for src, dest in moves:
+            self.board[src] = "x"
+            self.board[dest] = "2"
+            blocked = False
+            for pos, piece in enumerate(self.board):
+                if piece == "1":
+                    threat_count = 0
+                    for mill in mills:
+                        if pos in mill and all(self.board[p] in ["1", "x"] for p in mill):
+                            threat_count += 1
+                    if threat_count >= 2:
+                        if dest == pos:
+                            blocked = True
+                            break
+            self.board[src] = "2"
+            self.board[dest] = "x"
+            if blocked:
+                print(
+                    f"AI moved from {src} to {dest} to block a double opportunity threat.")
+                self.board[src] = "x"
+                self.board[dest] = "2"
+                if isMill(dest, self.board):
+                            print(f"AI moved from {src} to {dest} to form a mill while blocking double opportunity threat.")
+                            self.update_board()
+                            messagebox.showinfo(
+                                "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
+                            self.removal_phase = True
+                            self.root.after(500, self.ai_remove)
+                            return
+                self.update_board()
+                self.turn = "human"
+                return
 
         # Step 6: Use minimax (last but not least)
         evaluation, move = minimax(

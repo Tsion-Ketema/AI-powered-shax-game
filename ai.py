@@ -80,7 +80,8 @@ def select_capture_position(board):
 # Here i completely change the evaluation and the minimax working logic
 
 
-def evaluate(board):
+def evaluate(board,player):
+    opponent = "2" if player=="1" else "1"
     CAPTURE_BONUS = 100
     BLOCK_BONUS = 100
     THREAT_PENALTY = 50       # Penalty for opponent's threats
@@ -93,8 +94,8 @@ def evaluate(board):
 
     # 1. Mills and Threats
     for combo in mills:
-        ai_count = sum(1 for pos in combo if board[pos] == '2')
-        opp_count = sum(1 for pos in combo if board[pos] == '1')
+        ai_count = sum(1 for pos in combo if board[pos] == player)
+        opp_count = sum(1 for pos in combo if board[pos] == opponent)
 
         # Completed mills
         if ai_count == 3:
@@ -116,7 +117,7 @@ def evaluate(board):
                 shared_positions = set(combo1) & set(combo2)
                 if len(shared_positions) == 1:  # One shared position
                     shared_pos = list(shared_positions)[0]
-                    if board[shared_pos] == '2':  # AI controls shared position
+                    if board[shared_pos] == player:  # AI controls shared position
                         score += DOUBLE_THREAT_BONUS
 
     # # 3. Strategic Positions
@@ -128,37 +129,38 @@ def evaluate(board):
     #         score -= STRATEGIC_POSITION_BONUS
 
     # 4. Mobility
-    ai_moves = len(get_possible_moves_player(board, '2'))
-    opp_moves = len(get_possible_moves_player(board, '1'))
+    ai_moves = len(get_possible_moves_player(board, player))
+    opp_moves = len(get_possible_moves_player(board, opponent))
     score += (ai_moves - opp_moves) * MOBILITY_BONUS
 
     # 5. Piece Advantage
-    ai_pieces = board.count('2')
-    opp_pieces = board.count('1')
+    ai_pieces = board.count(player)
+    opp_pieces = board.count(opponent)
     score += (ai_pieces - opp_pieces) * 10
 
     return score
 
 
-def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
+def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase):
     # Base case: Evaluate the board if depth is 0 or no moves are possible
+    opponent = "2" if player=="1" else "1"
     possible_moves = get_possible_moves(board)
     if depth == 0 or not possible_moves:
-        return evaluate(board), None
+        return evaluate(board,player), None
 
     if is_maximizing:
         # Maximizing player (AI)
         if is_movement_phase:
             max_eval = float('-inf')
             best_move = None
-            available_moves = get_possible_moves_player(board, '2')
+            available_moves = get_possible_moves_player(board, player)
             if available_moves:
                 best_move = available_moves[0]
             for source, dest in available_moves:
                 # Apply the move
-                new_board = apply_move(board, source, dest, '2')
+                new_board = apply_move(board, source, dest, player)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, False, is_movement_phase)
+                                  beta, opponent ,False, is_movement_phase)
                 # Update the best move
                 if eval > max_eval:
                     max_eval = eval
@@ -173,9 +175,9 @@ def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
             best_move = None
             for move in get_possible_moves(board):
                 # Apply the placement
-                new_board = apply_place(board, move, '2')
+                new_board = apply_place(board, move, player)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, False, is_movement_phase)
+                                  beta, opponent ,False, is_movement_phase)
                 # Update the best move
                 if eval > max_eval:
                     max_eval = eval
@@ -190,11 +192,11 @@ def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
         if is_movement_phase:
             min_eval = float('inf')
             best_move = None
-            for source, dest in get_possible_moves_player(board, '1'):
+            for source, dest in get_possible_moves_player(board, opponent):
                 # Apply the move
-                new_board = apply_move(board, source, dest, '1')
+                new_board = apply_move(board, source, dest, opponent)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, True, is_movement_phase)
+                                  beta,player ,True, is_movement_phase)
                 # Update the best move
                 if eval < min_eval:
                     min_eval = eval
@@ -209,9 +211,9 @@ def minimax(board, depth, alpha, beta, is_maximizing, is_movement_phase):
             best_move = None
             for move in get_possible_moves(board):
                 # Apply the placement
-                new_board = apply_place(board, move, '1')
+                new_board = apply_place(board, move, opponent)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, True, is_movement_phase)
+                                  beta,player ,True, is_movement_phase)
                 # Update the best move
                 if eval < min_eval:
                     min_eval = eval
