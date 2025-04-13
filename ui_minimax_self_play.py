@@ -1,4 +1,4 @@
-from ai import *
+from ai_minimax import *
 from utils import *
 from tkinter import messagebox
 import tkinter as tk
