@@ -80,8 +80,8 @@ def select_capture_position(board):
 # Here i completely change the evaluation and the minimax working logic
 
 
-def evaluate(board,player):
-    opponent = "2" if player=="1" else "1"
+def evaluate(board, player):
+    opponent = "2" if player == "1" else "1"
     CAPTURE_BONUS = 100
     BLOCK_BONUS = 100
     THREAT_PENALTY = 50       # Penalty for opponent's threats
@@ -120,15 +120,7 @@ def evaluate(board,player):
                     if board[shared_pos] == player:  # AI controls shared position
                         score += DOUBLE_THREAT_BONUS
 
-    # # 3. Strategic Positions
-    # strategic_positions = [4, 10, 13, 19]  # Example strategic positions
-    # for pos in strategic_positions:
-    #     if board[pos] == '2':
-    #         score += STRATEGIC_POSITION_BONUS
-    #     elif board[pos] == '1':
-    #         score -= STRATEGIC_POSITION_BONUS
-
-    # 4. Mobility
+    # 3. Mobility
     ai_moves = len(get_possible_moves_player(board, player))
     opp_moves = len(get_possible_moves_player(board, opponent))
     score += (ai_moves - opp_moves) * MOBILITY_BONUS
@@ -143,10 +135,10 @@ def evaluate(board,player):
 
 def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase):
     # Base case: Evaluate the board if depth is 0 or no moves are possible
-    opponent = "2" if player=="1" else "1"
+    opponent = "2" if player == "1" else "1"
     possible_moves = get_possible_moves(board)
     if depth == 0 or not possible_moves:
-        return evaluate(board,player), None
+        return evaluate(board, player), None
 
     if is_maximizing:
         # Maximizing player (AI)
@@ -161,7 +153,7 @@ def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase)
                 # Apply the move
                 new_board = apply_move(board, source, dest, player)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, opponent ,False, is_movement_phase)
+                                  beta, opponent, False, is_movement_phase)
                 # Update the best move
                 if eval > max_eval:
                     max_eval = eval
@@ -180,7 +172,7 @@ def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase)
                 # Apply the placement
                 new_board = apply_place(board, move, player)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta, opponent ,False, is_movement_phase)
+                                  beta, opponent, False, is_movement_phase)
                 # Update the best move
                 if eval > max_eval:
                     max_eval = eval
@@ -201,7 +193,7 @@ def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase)
                 # Apply the move
                 new_board = apply_move(board, source, dest, opponent)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta,player ,True, is_movement_phase)
+                                  beta, player, True, is_movement_phase)
                 # Update the best move
                 if eval < min_eval:
                     min_eval = eval
@@ -220,7 +212,7 @@ def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase)
                 # Apply the placement
                 new_board = apply_place(board, move, opponent)
                 eval, _ = minimax(new_board, depth-1, alpha,
-                                  beta,player ,True, is_movement_phase)
+                                  beta, player, True, is_movement_phase)
                 # Update the best move
                 if eval < min_eval:
                     min_eval = eval

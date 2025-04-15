@@ -19,25 +19,29 @@ class Node:
             possible_moves = get_possible_moves_player(self.board, self.player)
         elif self.phase == 'removal':
             opponent = '2' if self.player == '1' else '1'
-            possible_moves = [i for i in range(24) if self.board[i] == opponent]
+            possible_moves = [i for i in range(
+                24) if self.board[i] == opponent]
         else:  # placement
             possible_moves = get_possible_moves(self.board)
 
-        return len(self.children) == len(possible_moves)
-
+        # return len(self.children) == len(possible_moves)
+        existing_moves = set(child.move for child in self.children)
+        return all(move in existing_moves for move in possible_moves)
 
     def expand(self):
         if self.phase == 'movement':
             possible_moves = get_possible_moves_player(self.board, self.player)
         elif self.phase == 'removal':
             opponent = '2' if self.player == '1' else '1'
-            possible_moves = [i for i in range(24) if self.board[i] == opponent]
+            possible_moves = [i for i in range(
+                24) if self.board[i] == opponent]
         else:  # placement
             possible_moves = get_possible_moves(self.board)
 
         for move in possible_moves:
             if self.phase == 'movement':
-                new_board = apply_move(self.board, move[0], move[1], self.player)
+                new_board = apply_move(
+                    self.board, move[0], move[1], self.player)
             elif self.phase == 'removal':
                 new_board = self.board[:]
                 new_board[move] = 'x'
@@ -46,11 +50,11 @@ class Node:
 
             next_player = '1' if self.player == '2' else '2'
             # Phase doesn't change during expansion
-            child_node = Node(new_board, next_player, self.phase, move=move, parent=self)
+            child_node = Node(new_board, next_player,
+                              self.phase, move=move, parent=self)
             self.children.append(child_node)
 
         return self.children
-
 
     def best_child(self, exploration_weight=math.sqrt(2)):
         if not self.children:
@@ -61,7 +65,8 @@ class Node:
             if child.visits == 0:
                 return child
             exploitation = child.total_reward / child.visits
-            exploration = exploration_weight * math.sqrt(math.log(self.visits) / child.visits)
+            exploration = exploration_weight * \
+                math.sqrt(math.log(self.visits) / child.visits)
             uct = exploitation + exploration
             if uct > best_score:
                 best_score = uct
@@ -107,7 +112,6 @@ def simulate(node):
     return evaluate(board, current_player)
 
 
-
 def monte_carlo_tree_search(initial_board, player, phase, iterations=1000):
     root = Node(initial_board, player, phase)
     for _ in range(iterations):
@@ -116,7 +120,8 @@ def monte_carlo_tree_search(initial_board, player, phase, iterations=1000):
             node = node.best_child(exploration_weight=1.4)
         if not node.is_fully_expanded():
             node.expand()
-            node = random.choice(node.children)
+            if node.children:
+                node = random.choice(node.children)
         simulation_result = simulate(node)
         while node is not None:
             if node.player == player:
@@ -128,9 +133,10 @@ def monte_carlo_tree_search(initial_board, player, phase, iterations=1000):
 
     if not root.children:
         return None
-    best_child = max(root.children, key=lambda c: c.visits)
-    return best_child.move
 
+    best_child = max(root.children, key=lambda c: c.visits)
+
+    return best_child.move
 
 
 # Original functions remain unchanged
@@ -164,7 +170,7 @@ def apply_move(board, pos1, pos2, player):
 
 def select_capture_position(board, player):
     # Prioritize removing opponent's mills or strategic positions
-    opponent = "2" if player=="1" else "1"
+    opponent = "2" if player == "1" else "1"
     opponent_pieces = [i for i in range(len(board)) if board[i] == opponent]
     best_pos = None
     best_score = -float('inf')
@@ -188,7 +194,7 @@ def select_capture_position(board, player):
 
 
 def evaluate(board, player):
-    opponent = "2" if player=="1" else "1"
+    opponent = "2" if player == "1" else "1"
     CAPTURE_BONUS = 100
     THREAT_PENALTY = 50       # Penalty for opponent's threats
     AI_THREAT_BONUS = 30      # Bonus for AI's own threats
@@ -215,7 +221,8 @@ def evaluate(board, player):
             score -= THREAT_PENALTY   # Opponent can complete a mill next move
 
     # Strategic positions (central spots, part of multiple mills)
-    strategic_positions = [4, 10, 13, 19]  # Example for a standard Morris board
+    # Example for a standard Morris board
+    strategic_positions = [4, 10, 13, 19]
     for pos in strategic_positions:
         if board[pos] == player:
             score += STRATEGIC_POSITION_BONUS

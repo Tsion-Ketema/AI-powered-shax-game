@@ -292,8 +292,6 @@ class ShaxGame:
                 return
             self.board[src] = "2"
             self.board[dest] = "x"
-        
-        
 
         # Step 2: Try to move the ai piece to block potential back-and-forth mill reformation by the human.
         for src, dest in moves:
@@ -315,13 +313,14 @@ class ShaxGame:
                 self.board[src] = "x"
                 self.board[dest] = "2"
                 if isMill(dest, self.board):
-                            print(f"AI moved from {src} to {dest} to form a mill while blocking potential back-and-forth mill.")
-                            self.update_board()
-                            messagebox.showinfo(
-                                "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
-                            self.removal_phase = True
-                            self.root.after(500, self.ai_remove)
-                            return
+                    print(
+                        f"AI moved from {src} to {dest} to form a mill while blocking potential back-and-forth mill.")
+                    self.update_board()
+                    messagebox.showinfo(
+                        "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
+                    self.removal_phase = True
+                    self.root.after(500, self.ai_remove)
+                    return
                 self.update_board()
                 self.turn = "human"
                 return
@@ -337,21 +336,22 @@ class ShaxGame:
                             empty_space = []
                             safe_target = []
                             for i in adjacentLocations(src):
-                                if self.board[i]=="x":
+                                if self.board[i] == "x":
                                     empty_space.append(i)
                             for pos in empty_space:
-                               if any(self.board[adj] == "1" for adj in adjacentLocations(pos)):
-                                   continue
-                               else:
-                                   safe_target.append(pos)
+                                if any(self.board[adj] == "1" for adj in adjacentLocations(pos)):
+                                    continue
+                                else:
+                                    safe_target.append(pos)
                             if not safe_target:
-                               self.board[src] = "x"
-                               self.board[dest] = "2"
+                                self.board[src] = "x"
+                                self.board[dest] = "2"
                             else:
-                                self.board[src]="x"
-                                self.board[safe_target[0]]="2"
+                                self.board[src] = "x"
+                                self.board[safe_target[0]] = "2"
                             if isMill(dest, self.board):
-                                print(f"AI moved from {src} to {dest} to back and forth mill.")
+                                print(
+                                    f"AI moved from {src} to {dest} to back and forth mill.")
                                 self.update_board()
                                 messagebox.showinfo(
                                     "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
@@ -385,13 +385,14 @@ class ShaxGame:
                 self.board[src] = "x"
                 self.board[dest] = "2"
                 if isMill(dest, self.board):
-                            print(f"AI moved from {src} to {dest} to form a mill while blocking double opportunity threat.")
-                            self.update_board()
-                            messagebox.showinfo(
-                                "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
-                            self.removal_phase = True
-                            self.root.after(500, self.ai_remove)
-                            return
+                    print(
+                        f"AI moved from {src} to {dest} to form a mill while blocking double opportunity threat.")
+                    self.update_board()
+                    messagebox.showinfo(
+                        "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
+                    self.removal_phase = True
+                    self.root.after(500, self.ai_remove)
+                    return
                 self.update_board()
                 self.turn = "human"
                 return

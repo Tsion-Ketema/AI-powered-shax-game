@@ -4,6 +4,8 @@ from tkinter import messagebox
 import tkinter as tk
 import random
 from ai_mcts import *
+from datetime import datetime
+from game_logger import GameLogger
 
 
 pos_coords = {
@@ -13,9 +15,10 @@ pos_coords = {
     15: (200, 360), 16: (280, 360), 17: (360, 360), 18: (120, 440), 19: (280, 440),
     20: (440, 440), 21: (40, 520), 22: (280, 520), 23: (520, 520)
 }
-ai_config ={
-    "1":"minimax",
-    "2":"mcts"
+
+ai_config = {
+    "1": "mcts",
+    "2": "minimax"
 }
 
 
@@ -54,6 +57,10 @@ class ShaxGame:
 
         self.root.after(500, self.ai_place)
         self.update_board()
+        self.game_start_time = datetime.now()
+
+        print(
+            f"[Game Start] Game started at {self.game_start_time.strftime('%H:%M:%S')}")
 
     def draw_board_lines(self):
         self.canvas.create_rectangle(40, 40, 520, 520, width=2)
@@ -95,43 +102,46 @@ class ShaxGame:
         )
         self.status_label.config(text=status_text)
 
-
     def handle_opening_phase(self):
         """Handles the logic for the opening phase."""
         # Determine the order of removal
         if self.first_mill == "1":
-            print("Opening Phase Player 1 formed the first mill Player 1 remove player 2's piece first")  
+            print(
+                "Opening Phase Player 1 formed the first mill Player 1 remove player 2's piece first")
             self.removal_phase = True
             self.turn = "1"
             self.ai_remove()
         elif self.first_mill == "2":
             print(
                 "Opening Phase Player 2 formed a mill first! It will remove one of opponent pieces.")
+            self.removal_phase = True
             self.turn = "2"
             self.ai_remove()  # AI removes one human piece
         else:
             print(
                 "Opening Phase", "No mills were formed. Player 2 will remove player 1's piece first.")
             self.turn = "2"
+            self.removal_phase = True
             self.ai_remove()
 
     def ai_place(self):
         move = None
-        if ai_config[self.turn]=="minimax":
+        if ai_config[self.turn] == "minimax":
             evaluation, move = minimax(
-                    self.board, self.depth,  self.alpha, self.beta, self.turn, True, False)
-        elif ai_config[self.turn]=="mcts":
+                self.board, self.depth,  self.alpha, self.beta, self.turn, True, False)
+        elif ai_config[self.turn] == "mcts":
             move = monte_carlo_tree_search(self.board, self.turn, self.phase)
-        
+
         self.board[move] = self.turn
-        print(f"Player {self.turn} placed piece {self.placement_moves+1} at position {move}")
+        # print(
+        # f"Player {self.turn} placed piece {self.placement_moves+1} at position {move}")
         if isMill(move, self.board):
             if self.first_mill is None:
                 self.first_mill = self.turn
         self.placement_moves += 1
         self.update_board()
         if self.placement_moves < 24:
-            self.turn = "1" if self.turn=="2" else "2"
+            self.turn = "1" if self.turn == "2" else "2"
             self.ai_place()
         else:
             self.phase = "opening"
@@ -139,36 +149,39 @@ class ShaxGame:
             self.removal_phase = True
 
     def ai_move(self):
-        opponent = "2" if self.turn=="1" else "1"
-        
+        opponent = "2" if self.turn == "1" else "1"
+
         moves = get_possible_moves_player(self.board, self.turn)
         if not moves:
-            print(f"Player {self.turn} is blocked. Player {opponent} will make a move to free up space.")
+            # print(
+            #     f"Player {self.turn} is blocked. Player {opponent} will make a move to free up space.")
             self.turn = opponent
             self.blocked = True
             self.ai_forced_move_no_capture()
             return
 
-        if ai_config[self.turn]=="mcts":
+        if ai_config[self.turn] == "mcts":
             move = monte_carlo_tree_search(self.board, self.turn, self.phase)
             source, dest = move
             self.board[source] = 'x'
             self.board[dest] = self.turn
-            print(f"Player {self.turn} moved from {source} to {dest} with mcts")
+            print(
+                f"Player {self.turn} moved from {source} to {dest} with mcts")
             self.update_board()
             self.check_win_conditions()
             self.turn = opponent
             self.root.after(500, self.ai_move)
-        elif ai_config[self.turn]=="minimax":
+        elif ai_config[self.turn] == "minimax":
             # Step 1: Try forming a mill
             for src, dest in moves:
                 self.board[src] = "x"
                 self.board[dest] = self.turn
                 if isMill(dest, self.board):
-                    print(f"Player {self.turn} moved from {src} to {dest} to form a mill.")
+                    # print(
+                    #     f"Player {self.turn} moved from {src} to {dest} to form a mill.")
                     self.update_board()
-                    print(
-                        f"Player {self.turn} formed a mill! It will remove one of opponent piece.")
+                    # print(
+                    #     f"Player {self.turn} formed a mill! It will remove one of opponent piece.")
                     self.removal_phase = True
                     self.root.after(500, self.ai_remove)
                     return
@@ -181,26 +194,29 @@ class ShaxGame:
                 backforth_threat = False
                 for mill in mills:
                     if any(self.board[p] == opponent for p in mill) and dest in mill:
-                        opponent_positions = [p for p in mill if self.board[p] == opponent]
-                        empty_positions = [p for p in mill if self.board[p] == "x"]
+                        opponent_positions = [
+                            p for p in mill if self.board[p] == opponent]
+                        empty_positions = [
+                            p for p in mill if self.board[p] == "x"]
                         if len(opponent_positions) == 2 and len(empty_positions) == 1:
                             backforth_threat = True
                             break
                 self.board[src] = self.turn
                 self.board[dest] = "x"
                 if backforth_threat:
-                    print(
-                        f"Player {self.turn} moved from {src} to {dest} to block opponent back-and-forth mill.")
+                    # print(
+                    #     f"Player {self.turn} moved from {src} to {dest} to block opponent back-and-forth mill.")
                     self.board[src] = "x"
                     self.board[dest] = self.turn
                     if isMill(dest, self.board):
-                                print(f"Player {self.turn} moved from {src} to {dest} to form a mill while blocking potential back-and-forth mill.")
-                                self.update_board()
-                                print(
-                                    f"Player {self.turn} formed a mill! It will remove one of opponent pieces.")
-                                self.removal_phase = True
-                                self.root.after(500, self.ai_remove)
-                                return
+                        # print(
+                        #     f"Player {self.turn} moved from {src} to {dest} to form a mill while blocking potential back-and-forth mill.")
+                        self.update_board()
+                        # print(
+                        #     f"Player {self.turn} formed a mill! It will remove one of opponent pieces.")
+                        self.removal_phase = True
+                        self.root.after(500, self.ai_remove)
+                        return
                     self.update_board()
                     self.turn = opponent
                     self.root.after(500, self.ai_move)
@@ -217,22 +233,24 @@ class ShaxGame:
                                 empty_space = []
                                 safe_target = []
                                 for i in adjacentLocations(src):
-                                    if self.board[i]=="x":
+                                    if self.board[i] == "x":
                                         empty_space.append(i)
                                 for pos in empty_space:
-                                   if any(self.board[adj] == opponent for adj in adjacentLocations(pos)):
-                                       continue
-                                   else:
-                                       safe_target.append(pos)
+                                    if any(self.board[adj] == opponent for adj in adjacentLocations(pos)):
+                                        continue
+                                    else:
+                                        safe_target.append(pos)
                                 if not safe_target:
-                                   self.board[src] = "x"
-                                   self.board[dest] = self.turn
-                                   print(f"Player {self.turn} moved from {src} to {dest} to create back and forth mill. no safe target")
+                                    self.board[src] = "x"
+                                    self.board[dest] = self.turn
+                                    print(
+                                        f"Player {self.turn} moved from {src} to {dest} to create back and forth mill. no safe target")
                                 else:
-                                    self.board[src]="x"
-                                    self.board[safe_target[0]]=self.turn
+                                    self.board[src] = "x"
+                                    self.board[safe_target[0]] = self.turn
                                 if isMill(dest, self.board):
-                                    print(f"Player {self.turn} moved from {src} to {dest} to create back and forth mill. safe target")
+                                    print(
+                                        f"Player {self.turn} moved from {src} to {dest} to create back and forth mill. safe target")
                                     self.update_board()
                                     print(
                                         f"Player {self.turn} formed a mill! It will remove one of opponent piece.")
@@ -268,13 +286,14 @@ class ShaxGame:
                     self.board[src] = "x"
                     self.board[dest] = self.turn
                     if isMill(dest, self.board):
-                                print(f"Player {self.turn} moved from {src} to {dest} to form a mill while blocking double opportunity threat.")
-                                self.update_board()
-                                print(
-                                    f"Player {self.turn} formed a mill! It will remove one of opponent pieces.")
-                                self.removal_phase = True
-                                self.root.after(500, self.ai_remove)
-                                return
+                        print(
+                            f"Player {self.turn} moved from {src} to {dest} to form a mill while blocking double opportunity threat.")
+                        self.update_board()
+                        print(
+                            f"Player {self.turn} formed a mill! It will remove one of opponent pieces.")
+                        self.removal_phase = True
+                        self.root.after(500, self.ai_remove)
+                        return
                     self.update_board()
                     self.turn = opponent
                     self.root.after(500, self.ai_move)
@@ -282,11 +301,12 @@ class ShaxGame:
 
             # Step 6: Use minimax (last but not least)
             evaluation, move = minimax(
-                self.board, self.depth, self.alpha, self.beta, self.turn ,True, True)
+                self.board, self.depth, self.alpha, self.beta, self.turn, True, True)
             source, dest = move
             self.board[source] = 'x'
             self.board[dest] = self.turn
-            print(f"Player {self.turn} moved from {source} to {dest} with minimax")
+            print(
+                f"Player {self.turn} moved from {source} to {dest} with minimax")
 
             self.update_board()
             self.check_win_conditions()
@@ -298,43 +318,53 @@ class ShaxGame:
         AI removal routine: intelligently remove one of the human's pieces.
         Handles both the opening and movement phases with prioritized logic.
         """
-        opponent = "2" if self.turn=="1" else "1"
-        def remove_piece(pos, reason):
-                """Helper function to remove a human piece and update the game state."""
-                self.board[pos] = "x"
-                if self.turn =="1":
-                    self.player_one_captures +=1
-                else:
-                    self.player_two_captures +=1
-                print(f"Player {self.turn} removed opponent piece at {pos} ({reason})")
-                self.update_board()
-                self.check_win_conditions()  # Ensure win condition is checked immediately
-                self.removal_phase = False
+        opponent = "2" if self.turn == "1" else "1"
 
-                if self.phase == "opening":
-                    self.opening_count -= 1
-                    if self.opening_count == 0:
-                        self.phase = "movement"
-                        self.turn = opponent
-                        self.root.after(500, self.ai_move)
-                        print(
-                            f"Opening phase complete. Movement phase begins. Player {opponent}'s turn.")
-                    else:
-                        print(
-                            f"Opening Phase Now it's Player {opponent}'s turn to remove one {self.turn}'s piece.")
-                        self.removal_phase = True
-                        self.turn=opponent
-                        self.root.after(500, self.ai_remove)
-                else:
+        def remove_piece(pos, reason):
+            """Helper function to remove a human piece and update the game state."""
+            self.board[pos] = "x"
+            if self.turn == "1":
+                self.player_one_captures += 1
+            else:
+                self.player_two_captures += 1
+            # print(
+                # f"Player {self.turn} removed opponent piece at {pos} ({reason})")
+            self.update_board()
+            self.check_win_conditions()  # Ensure win condition is checked immediately
+            self.removal_phase = False
+
+            if self.phase == "opening":
+                self.opening_count -= 1
+                if self.opening_count == 0:
+                    self.phase = "movement"
                     self.turn = opponent
                     self.root.after(500, self.ai_move)
-                self.update_board()
+                    print(
+                        f"Opening phase complete. Movement phase begins. Player {opponent}'s turn.")
+                else:
+                    print(
+                        f"Opening Phase Now it's Player {opponent}'s turn to remove one {self.turn}'s piece.")
+                    self.removal_phase = True
+                    self.turn = opponent
+                    self.root.after(500, self.ai_remove)
+            else:
+                self.turn = opponent
+                self.root.after(500, self.ai_move)
+            self.update_board()
 
-        if ai_config[self.turn]=="mcts":
-            move =monte_carlo_tree_search(self.board, self.turn, "removal" if self.phase=="opening" else self.phase)
-            remove_piece(move,"Mcts removal move")
-        
-        elif ai_config[self.turn]=="minimax":
+        if ai_config[self.turn] == "mcts":
+            phase_for_mcts = "removal" if self.removal_phase else self.phase
+            print(
+                f"[DEBUG] self.phase={self.phase}, self.removal_phase={self.removal_phase}")
+
+            move = monte_carlo_tree_search(
+                self.board, self.turn, phase_for_mcts)
+
+            print(f"[MCTS] Phase: {self.phase}, Move returned: {move}")
+
+            remove_piece(move, "Mcts removal move")
+
+        elif ai_config[self.turn] == "minimax":
 
             # ***************Opening phase removal logic*****************
             # Step 1: Opening phase logic - prioritize guaranteed AI mills
@@ -358,7 +388,7 @@ class ShaxGame:
                                                     self.phase = "movement"
                                                 return
                                             self.board[adj] = self.turn
-                                    self.board[pos] =opponent
+                                    self.board[pos] = opponent
 
                 # Step 2: Opening phase logic - disrupt human mills
                 for pos, piece in enumerate(self.board):
@@ -435,7 +465,8 @@ class ShaxGame:
 
                 # Step 1: First Detect back-and-forth mill recreation
                 for mill in mills:
-                    human_positions = [p for p in mill if self.board[p] == opponent]
+                    human_positions = [
+                        p for p in mill if self.board[p] == opponent]
                     empty_positions = [p for p in mill if self.board[p] == "x"]
 
                     # Check if the mill has exactly 2 human pieces and 1 empty position
@@ -487,62 +518,68 @@ class ShaxGame:
         Falls back to a random move if no safe move is found.
         """
         moves = get_possible_moves_player(self.board, self.turn)
-        # Add randomness when choosing among safe options
-        random.shuffle(moves)
-
-        # First try safe moves (that don’t allow opponent to form a mill)
-        for src, dest in moves:
-            simulated_board = self.board.copy()
-            simulated_board[src] = 'x'
-            simulated_board[dest] = self.turn
-
-            if not opponent_can_form_mill(simulated_board):
-                self.board[src] = 'x'
-                self.board[dest] = self.turn
-                print(f"Player {self.turn} safe forced move from {src} to {dest}")
-                self.update_board()
-                self.turn="2" if self.turn=="1" else "1"
-                self.root.after(500, self.ai_move)
-                return
-
-    # If no safe move, fall back to random one
         if moves:
             src, dest = random.choice(moves)
             self.board[src] = 'x'
             self.board[dest] = self.turn
-            print(f"Player {self.turn} fallback random move from {src} to {dest}")
+            print(
+                f"Player {self.turn} fallback random move from {src} to {dest}")
             self.update_board()
 
         if not get_possible_moves_player(self.board, self.turn):
-            print(
-                f"Player {self.turn} is blocked too. No move can be made.")
+            print(f"Player {self.turn} is blocked too. No move can be made.")
             return
+
         evaluation, move = minimax(
-            self.board, self.depth, self.alpha, self.beta,self.turn, True, True)
+            self.board, self.depth, self.alpha, self.beta, self.turn, True, True)
+
         if move is None:
-            print(
-                f"Player {self.turn} AI is blocked. No move can be made.")
+            print(f"Player {self.turn} AI is blocked. No move can be made.")
             return
+
         self.update_board()
         self.check_win_conditions()
-        self.turn = "2" if self.turn =="1" else "1"
+        self.turn = "2" if self.turn == "1" else "1"
         self.root.after(500, self.ai_move)
 
     def check_win_conditions(self):
         player_one_pieces = numOfPieces(self.board, "1")
         player_two_pieces = numOfPieces(self.board, "2")
 
-        if player_one_pieces < 3:
-            print("Player 2 Won the game")
-            self.root.quit()
-        elif player_two_pieces < 3:
-            print("Player 1 Won the game")
+        if player_one_pieces < 3 or player_two_pieces < 3:
+            winner = "Player 2" if player_one_pieces < 3 else "Player 1"
+            loser = "Player 1" if player_one_pieces < 3 else "Player 2"
+            game_end_time = datetime.now()
+            duration = game_end_time - self.game_start_time
+
+            print(f"[Game End] {winner} won against {loser}")
+            print(f"[Game Duration] Total duration: {duration}")
+
+            # Log result using logger
+            self.logger.log_result(
+                game_number=self.game_number,
+                winner=winner,
+                start_time=self.game_start_time,
+                end_time=game_end_time,
+                ai_config=ai_config  # <--- perfect, since it holds current player type info
+            )
+
             self.root.quit()
 
+
 if __name__ == "__main__":
-    for i in range(3):
-        print(f"Game {i+1}/3 started")
+
+    logger = GameLogger("Minimax with Rules vs MCTS")
+    for i in range(5):
+
+        print(f"Game {i+1}/10 started")
+
         root = tk.Tk()
         game = ShaxGame(root)
+
+        game.logger = logger  # Attach logger to the game
+        game.game_number = i + 1
         root.mainloop()
         root.destroy()
+
+    logger.summarize_and_plot()

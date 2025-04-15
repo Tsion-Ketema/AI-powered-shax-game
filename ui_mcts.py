@@ -38,15 +38,15 @@ class ShaxGame:
         self.turn = "human"
         self.selected = None
         self.placement_moves = 0
-        self.first_mill=None
+        self.first_mill = None
         self.removal_phase = False
         self.mills_formed = {"human": 0, "ai": 0}
-        self.opening_count=2
+        self.opening_count = 2
         self.alpha = float('-inf')
         self.beta = float('inf')
         self.depth = 8
-        self.blocked=False
-        self.iteration= 15000
+        self.blocked = False
+        self.iteration = 15000
 
         # Capture tracking
         self.human_captures = 0
@@ -115,7 +115,7 @@ class ShaxGame:
         self.board[pos] = "1"
         if isMill(pos, self.board):
             if self.first_mill is None:
-                self.first_mill="human"
+                self.first_mill = "human"
             self.mills_formed["human"] += 1
 
         self.placement_moves += 1
@@ -131,7 +131,8 @@ class ShaxGame:
         # If it's the human's turn and not in a removal phase, check if human is blocked.
         if self.turn == "human" and not self.removal_phase:
             if not get_possible_moves_player(self.board, "1"):
-                messagebox.showinfo("Blocked", "You are blocked. AI will move to free up space.")
+                messagebox.showinfo(
+                    "Blocked", "You are blocked. AI will move to free up space.")
                 self.ai_forced_move_no_capture()
                 return
 
@@ -183,16 +184,16 @@ class ShaxGame:
         if self.board[pos] == "2":  # Check if the piece belongs to AI
             self.board[pos] = "x"
             self.human_captures += 1  # Increase human's capture count
-            if self.phase=="opening":
-                self.opening_count-=1
+            if self.phase == "opening":
+                self.opening_count -= 1
             self.update_board()
             self.turn = "ai"
             self.blocked = False
-            if self.opening_count!=0:
+            if self.opening_count != 0:
                 self.ai_remove()
             else:
-                self.phase="movement"
-                self.removal_phase=False
+                self.phase = "movement"
+                self.removal_phase = False
                 self.root.after(500, self.ai_move)  # AI makes its move
         else:
             messagebox.showinfo("Invalid Selection",
@@ -205,7 +206,7 @@ class ShaxGame:
             print("Human formed the first mill")  # Debug statement
             messagebox.showinfo(
                 "Opening Phase", "You formed a mill first! Remove one AI piece.")
-            self.removal_phase=True
+            self.removal_phase = True
         elif self.first_mill == "ai":
             print("AI formed the first mill")  # Debug statement
             messagebox.showinfo(
@@ -234,7 +235,7 @@ class ShaxGame:
 
     def ai_place(self):
         move = monte_carlo_tree_search(
-            self.board, '2',  False,self.iteration)
+            self.board, '2',  False, self.iteration)
         self.board[move] = '2'
         if isMill(move, self.board):
             if self.first_mill is None:  # Check if this is the first mill
@@ -249,27 +250,22 @@ class ShaxGame:
             self.removal_phase = True
 
     def ai_move(self):
-        # if self.removal_phase:
-        #     self.ai_remove()
-        #     return
-
         move = monte_carlo_tree_search(
-            self.board, '2',  True,self.iteration)
+            self.board, '2',  True, self.iteration)
         if move is None:
-            messagebox.showinfo("Blocked", "AI is blocked. Please make a move to free up space.")
+            messagebox.showinfo(
+                "Blocked", "AI is blocked. Please make a move to free up space.")
             self.blocked = True
             self.turn = "human"
             return
-
-
-
         source, dest = move
         self.board[source] = 'x'
         self.board[dest] = '2'
         print(f"AI moved from {source} to {dest}")
         self.update_board()
         if isMill(dest, self.board):
-            messagebox.showinfo("Mill Formed", "AI formed a mill! It will remove one of your pieces.")
+            messagebox.showinfo(
+                "Mill Formed", "AI formed a mill! It will remove one of your pieces.")
             self.removal_phase = True
             self.root.after(500, self.ai_remove)
             return
@@ -283,20 +279,20 @@ class ShaxGame:
             if piece == "1":
                 self.board[pos] = "x"
                 print(f"AI removed piece at {pos}")
-                self.ai_captures+=1
+                self.ai_captures += 1
                 break
         self.removal_phase = False
-        if self.phase=="opening":
-            self.opening_count-=1
+        if self.phase == "opening":
+            self.opening_count -= 1
         self.update_board()
         self.check_win_conditions()
-        self.turn="human"
-        if self.phase=="opening" and self.opening_count==0:
-            self.phase="movement"
-        elif self.opening_count!=0:
+        self.turn = "human"
+        if self.phase == "opening" and self.opening_count == 0:
+            self.phase = "movement"
+        elif self.opening_count != 0:
             messagebox.showinfo(
                 "Opening Phase", "Now it's your turn to remove one AI piece.")
-            self.removal_phase=True
+            self.removal_phase = True
 
     def ai_forced_move_no_capture(self):
         """
@@ -317,12 +313,14 @@ class ShaxGame:
                     return
 
         if not get_possible_moves_player(self.board, "2"):
-            messagebox.showinfo("Blocked", "AI is blocked too. No move can be made.")
+            messagebox.showinfo(
+                "Blocked", "AI is blocked too. No move can be made.")
             return
         evaluation, move = monte_carlo_tree_search(
-            self.board, '2',  True,self.iteration)
+            self.board, '2',  True, self.iteration)
         if move is None:
-            messagebox.showinfo("Blocked", "AI is blocked. No move can be made.")
+            messagebox.showinfo(
+                "Blocked", "AI is blocked. No move can be made.")
             return
         self.update_board()
         self.check_win_conditions()
@@ -338,6 +336,8 @@ class ShaxGame:
         elif human_pieces < 3:
             messagebox.showinfo("Game Over", "You lose!")
             self.root.quit()
+
+
 if __name__ == "__main__":
     root = tk.Tk()
     game = ShaxGame(root)
