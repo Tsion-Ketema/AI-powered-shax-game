@@ -23,7 +23,7 @@ ai_config = {
 
 
 class ShaxGame:
-    def __init__(self, root):
+    def __init__(self, root, ai_config, logger, game_number):
         self.root = root
         self.root.title("Shax game by AI crackers")
         self.canvas = tk.Canvas(root, width=800, height=600, bg="sandy brown")
@@ -58,6 +58,12 @@ class ShaxGame:
         self.root.after(500, self.ai_place)
         self.update_board()
         self.game_start_time = datetime.now()
+        
+        self.root = root
+        self.ai_config = ai_config  # injected from main
+        self.logger = logger
+        self.game_number = game_number
+
 
         print(
             f"[Game Start] Game started at {self.game_start_time.strftime('%H:%M:%S')}")

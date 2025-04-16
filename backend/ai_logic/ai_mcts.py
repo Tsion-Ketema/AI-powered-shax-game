@@ -1,6 +1,6 @@
 import random
 import math
-from utils import mills, adjacentLocations
+from backend.game_logic.utils import *
 
 
 class Node:

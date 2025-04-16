@@ -1,27 +1,5 @@
-from utils import *
-from utils import adjacentLocations
+from backend.game_logic.utils import *
 import random
-
-
-def get_possible_moves(board):
-    return [i for i in range(len(board)) if board[i] == 'x']
-
-
-def get_positions(board, player):
-    return [i for i in range(len(board)) if board[i] == player]
-
-
-def get_possible_moves_player(board, player):
-
-    possible_moves = []
-    for i in range(len(board)):
-        if board[i] == player:
-            adjacent = adjacentLocations(i)
-            for j in adjacent:
-                if board[j] == 'x':
-                    possible_moves.append((i, j))
-    return possible_moves
-
 
 def apply_place(board, move, player):
     new_board = board[:]
