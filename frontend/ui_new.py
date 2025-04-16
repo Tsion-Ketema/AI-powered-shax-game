@@ -30,14 +30,17 @@ class ShaxGame:
         self.logger = logger
         self.game_number = game_number
         self.ai_config = ai_config
-        print(f"{ai_config} who's match is it now?" )
-
+        
         self._init_game_state()
 
         self.draw_board_lines()
         self.draw_positions()
 
-        self.root.after(500, self.ai_place)
+        if self.ai_config[self.turn] == "human":
+            self.canvas.bind("<Button-1>", self.handle_click)
+        else:
+            self.root.after(500, self.ai_place)
+
         self.update_board()
         self.game_start_time = datetime.now()
         print(f"[Game Start] Game started at {self.game_start_time.strftime('%H:%M:%S')}")
@@ -45,7 +48,7 @@ class ShaxGame:
     def _init_game_state(self):
         self.board = ["x"] * 24
         self.phase = "placement"
-        self.turn = "2"
+        self.turn = "1"
         self.selected = None
         self.placement_moves = 0
         self.first_mill = None
@@ -78,12 +81,14 @@ class ShaxGame:
         for pos, (x, y) in pos_coords.items():
             if (event.x - x)**2 + (event.y - y)**2 <= 15**2:
                 if self.phase == "placement":
-                    self.handle_placement(pos)
-                elif self.phase == "opening":
+                    from backend.game_logic.placement_logic import handle_human_placement
+                    handle_human_placement(self, pos)
+                elif self.phase == "removal":
                     self.handle_removal(pos)
                 elif self.phase == "movement":
                     self.handle_movement(pos)
                 return
+
 
     def update_board(self):
         self.canvas.delete("piece")
@@ -132,4 +137,3 @@ class ShaxGame:
     def ai_remove(self):
         perform_ai_removal(self)
 
-   
