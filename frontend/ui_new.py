@@ -1,14 +1,10 @@
 import tkinter as tk
-from datetime import datetime
-from tkinter import messagebox
 
-from game_logger import GameLogger
 from backend.game_logic.placement_logic import perform_ai_placement
 from backend.game_logic.opening_logic import perform_ai_opening
 from backend.game_logic.removal_logic import perform_ai_removal
 from backend.game_logic.movement_logic import perform_ai_movement
 from backend.game_logic.utils import *
-
 
 pos_coords = {
     0: (40, 40), 1: (280, 40), 2: (520, 40), 3: (120, 120), 4: (280, 120),
@@ -30,11 +26,14 @@ class ShaxGame:
         self.logger = logger
         self.game_number = game_number
         self.ai_config = ai_config
-        
+
         self._init_game_state()
 
         self.draw_board_lines()
         self.draw_positions()
+
+        self.ai_player = "1" if self.ai_config["1"] != "human" else "2"
+        self.human_player = "2" if self.ai_player == "1" else "1"
 
         if self.ai_config[self.turn] == "human":
             self.canvas.bind("<Button-1>", self.handle_click)
@@ -49,7 +48,6 @@ class ShaxGame:
         self.board = ["x"] * 24
         self.phase = "placement"
         self.turn = "1"
-        self.selected = None
         self.placement_moves = 0
         self.first_mill = None
         self.removal_phase = False
@@ -57,7 +55,7 @@ class ShaxGame:
         self.opening_count = 2
         self.alpha = float('-inf')
         self.beta = float('inf')
-        self.depth = 5
+        self.depth = 4
         self.blocked = False
         self.player_one_captures = 0
         self.player_two_captures = 0
@@ -76,19 +74,6 @@ class ShaxGame:
         for pos, (x, y) in pos_coords.items():
             self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                     fill="white", outline="black", width=2)
-            
-    def handle_click(self, event):
-        for pos, (x, y) in pos_coords.items():
-            if (event.x - x)**2 + (event.y - y)**2 <= 15**2:
-                if self.phase == "placement":
-                    from backend.game_logic.placement_logic import handle_human_placement
-                    handle_human_placement(self, pos)
-                elif self.phase == "removal":
-                    self.handle_removal(pos)
-                elif self.phase == "movement":
-                    self.handle_movement(pos)
-                return
-
 
     def update_board(self):
         self.canvas.delete("piece")
@@ -108,27 +93,23 @@ class ShaxGame:
         self.status_label.config(text=f"Turn: player {self.turn}  |  Player 1 Pieces: {p1}  |  Player 2 Pieces: {p2}  "
                                       f"|  P1 Captures: {self.player_one_captures}  |  P2 Captures: {self.player_two_captures}  | Phase: {self.phase}")
 
-    def check_win_conditions(self):
-        p1, p2 = numOfPieces(self.board, "1"), numOfPieces(self.board, "2")
-        if p1 < 3 or p2 < 3:
-            winner = "Player 2" if p1 < 3 else "Player 1"
-            loser = "Player 1" if p1 < 3 else "Player 2"
-            duration = datetime.now() - self.game_start_time
-            print(f"[Game End] {winner} won against {loser}")
-            print(f"[Game Duration] Total duration: {duration}")
-            self.logger.log_result(
-                game_number=self.game_number,
-                winner=winner,
-                start_time=self.game_start_time,
-                end_time=datetime.now(),
-                ai_config=self.ai_config
-            )
-            self.root.quit()
+    def handle_click(self, event):
+        for pos, (x, y) in pos_coords.items():
+            if (event.x - x) ** 2 + (event.y - y) ** 2 <= 15 ** 2:
+                if self.phase == "placement":
+                    from backend.game_logic.placement_logic import handle_human_placement
+                    handle_human_placement(self, pos)
+                elif self.removal_phase:
+                    from backend.game_logic.removal_logic import handle_human_removal
+                    handle_human_removal(self, pos)
+                elif self.phase == "movement":
+                    self.handle_movement(pos)
+                return
 
     def ai_place(self):
         perform_ai_placement(self)
 
-    def handle_opening_phase(self):
+    def ai_opening(self):
         perform_ai_opening(self)
 
     def ai_move(self):
@@ -136,4 +117,3 @@ class ShaxGame:
 
     def ai_remove(self):
         perform_ai_removal(self)
-

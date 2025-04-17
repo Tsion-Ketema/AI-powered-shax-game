@@ -2,7 +2,7 @@ from backend.game_logic.utils import *
 from backend.game_logic.opening_logic import perform_ai_opening
 from backend.ai_logic.ai_minimax import minimax
 from backend.ai_logic.ai_mcts import monte_carlo_tree_search
-
+from backend.game_logic.removal_logic import handle_human_removal
 
 def perform_ai_placement(game):
     current_player = game.turn
@@ -34,7 +34,7 @@ def perform_ai_placement(game):
     else:
         game.phase = "opening"
         game.removal_phase = True
-        game.handle_opening_phase()
+        game.ai_opening()
 
 
 def handle_human_placement(game, pos):
@@ -60,4 +60,8 @@ def handle_human_placement(game, pos):
     else:
         game.phase = "opening"
         game.removal_phase = True
-        game.handle_opening_phase()
+        game.turn = game.human_player  # Ensure human gets their turn to remove
+        if game.ai_config[game.turn] == "human":
+            game.canvas.bind("<Button-1>", game.handle_click)  # ✅ Allow human to click
+        print("Waiting for human to remove a piece (or 2nd one)...")
+

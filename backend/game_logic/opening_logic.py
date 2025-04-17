@@ -1,7 +1,6 @@
 from backend.game_logic.removal_logic import perform_ai_removal
 
 def perform_ai_opening(self):
-            """Handles the logic for the opening phase."""
             # Determine the order of removal
             if self.first_mill == "1":
                 print(

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 mills = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [12, 13, 14],
     [15, 16, 17], [18, 19, 20], [21, 22, 23], [0, 9, 21], [3, 10, 18],
@@ -16,13 +18,7 @@ adjacent = {
 def get_possible_moves(board):
     return [i for i in range(len(board)) if board[i] == 'x']
 
-
-def get_positions(board, player):
-    return [i for i in range(len(board)) if board[i] == player]
-
-
 def get_possible_moves_player(board, player):
-
     possible_moves = []
     for i in range(len(board)):
         if board[i] == player:
@@ -35,7 +31,6 @@ def get_possible_moves_player(board, player):
 def adjacentLocations(position):
     return adjacent[position]
 
-
 def check_next_mill(position, board, player):
     for mill in mills:
         if position in mill:
@@ -43,38 +38,27 @@ def check_next_mill(position, board, player):
                 return True
     return False
 
-
 def isMill(position, board):
     p = board[position]
     return p != 'x' and check_next_mill(position, board, p)
 
-
 def numOfPieces(board, player):
     return board.count(player)
 
+def check_win_conditions(self):
+        p1, p2 = numOfPieces(self.board, "1"), numOfPieces(self.board, "2")
+        if p1 < 3 or p2 < 3:
+            winner = "Player 2" if p1 < 3 else "Player 1"
+            loser = "Player 1" if p1 < 3 else "Player 2"
+            duration = datetime.now() - self.game_start_time
+            print(f"[Game End] {winner} won against {loser}")
+            print(f"[Game Duration] Total duration: {duration}")
+            self.logger.log_result(
+                game_number=self.game_number,
+                winner=winner,
+                start_time=self.game_start_time,
+                end_time=datetime.now(),
+                ai_config=self.ai_config
+            )
+            self.root.quit()
 
-def remove_non_mill_piece(board, player):
-    opponent = "2" if player == "1" else "1"
-    for pos in range(len(board)):
-        if board[pos] == opponent and not isMill(pos, board):
-            board[pos] = "x"
-            return True
-    return False
-
-
-def get_formed_mills(player, board):
-    """Returns a list of mills currently formed by the specified player."""
-    formed_mills = []
-    for mill in mills:
-        if all(board[pos] == player for pos in mill):
-            formed_mills.append(mill)
-    return formed_mills
-
-
-def removePiece(board, player):
-    opponent = "2" if player == "1" else "1"
-    for pos in range(len(board)):
-        if board[pos] == opponent and not isMill(pos, board):
-            board[pos] = "x"
-            return True
-    return False
