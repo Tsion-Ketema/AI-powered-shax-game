@@ -23,6 +23,7 @@ class ShaxGame:
         self.status_label = tk.Label(root, text="", font=("Arial", 12), fg="blue")
         self.status_label.pack()
 
+
         self.logger = logger
         self.game_number = game_number
         self.ai_config = ai_config
@@ -49,6 +50,7 @@ class ShaxGame:
         self.phase = "placement"
         self.turn = "1"
         self.placement_moves = 0
+        self.selected = None
         self.first_mill = None
         self.removal_phase = False
         self.mills_formed = {"human": 0, "ai": 0}
@@ -59,6 +61,8 @@ class ShaxGame:
         self.blocked = False
         self.player_one_captures = 0
         self.player_two_captures = 0
+        # in ui_new.py
+        self.pos_coords = pos_coords  # set as instance attribute once
 
     def draw_board_lines(self):
         self.canvas.create_rectangle(40, 40, 520, 520, width=2)
@@ -103,8 +107,26 @@ class ShaxGame:
                     from backend.game_logic.removal_logic import handle_human_removal
                     handle_human_removal(self, pos)
                 elif self.phase == "movement":
-                    self.handle_movement(pos)
+                    from backend.game_logic.movement_logic import handle_human_movement
+                    handle_human_movement(self, pos)
                 return
+
+    def check_win_conditions(self):
+        p1, p2 = numOfPieces(self.board, "1"), numOfPieces(self.board, "2")
+        if p1 < 3 or p2 < 3:
+            winner = "Player 2" if p1 < 3 else "Player 1"
+            loser = "Player 1" if p1 < 3 else "Player 2"
+            duration = datetime.now() - self.game_start_time
+            print(f"[Game End] {winner} won against {loser}")
+            print(f"[Game Duration] Total duration: {duration}")
+            self.logger.log_result(
+                game_number=self.game_number,
+                winner=winner,
+                start_time=self.game_start_time,
+                end_time=datetime.now(),
+                ai_config=self.ai_config
+            )
+            self.root.quit()
 
     def ai_place(self):
         perform_ai_placement(self)

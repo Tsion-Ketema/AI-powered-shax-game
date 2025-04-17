@@ -1,6 +1,8 @@
 from backend.ai_logic.ai_minimax import minimax
-from backend.ai_logic.ai_mcts  import monte_carlo_tree_search
+from backend.ai_logic.ai_mcts import monte_carlo_tree_search
 from backend.game_logic.utils import *
+from tkinter import messagebox
+
 
 def perform_ai_movement(game):
     current_player = game.turn
@@ -39,18 +41,6 @@ def perform_ai_movement(game):
             game.turn = opponent
             game.root.after(500, game.ai_move)
         return
-
-    elif ai_type == "mwr":
-        for strategy in [
-            try_form_mill,
-            block_backforth_threat,
-            disrupt_opponent_double_threat
-        ]:
-            if strategy(game, moves, current_player, opponent):
-                return
-
-        # Fallback to minimax with rules
-        fallback_minimax_move(game, moves, current_player, opponent)
 
     def try_form_mill(game, moves, player, opponent):
         for src, dest in moves:
@@ -126,3 +116,54 @@ def perform_ai_movement(game):
             game.root.after(500, game.ai_move)
             return True
         return False
+
+    if ai_type == "mwr":
+        for strategy in [
+            try_form_mill,
+            block_backforth_threat,
+            disrupt_opponent_double_threat
+        ]:
+            if strategy(game, moves, current_player, opponent):
+                return
+
+        # Fallback to minimax with rules
+        fallback_minimax_move(game, moves, current_player, opponent)
+
+
+def handle_human_movement(game, pos):
+    if game.ai_config[game.turn] != "human" or game.removal_phase:
+        return
+
+    player = game.human_player
+
+    if not get_possible_moves_player(game.board, player):
+        messagebox.showinfo("Blocked", "You are blocked. AI will move.")
+        game.blocked = True
+        game.root.after(500, lambda: game.ai_move())
+        return
+
+    if game.selected is None:
+        if game.board[pos] == player:
+            game.selected = pos
+            x, y = game.pos_coords[pos]
+            game.canvas.create_oval(x - 12, y - 12, x + 12, y + 12, outline="red", width=3, tag="highlight")
+        else:
+            messagebox.showinfo("Invalid Selection", "Select one of your own pieces.")
+    else:
+        if game.board[pos] != "x" or pos not in adjacentLocations(game.selected):
+            messagebox.showinfo("Invalid Move", "Invalid destination.")
+        else:
+            game.board[game.selected] = "x"
+            game.board[pos] = player
+            print(f"Human moved from {game.selected} to {pos}")
+            game.update_board()
+            if isMill(pos, game.board):
+                messagebox.showinfo("Mill Formed", "You formed a mill! Remove one of AI's pieces.")
+                game.removal_phase = True
+            else:
+                game.check_win_conditions()
+                game.turn = game.ai_player
+                game.root.after(500, lambda: game.ai_move())
+
+        game.canvas.delete("highlight")
+        game.selected = None

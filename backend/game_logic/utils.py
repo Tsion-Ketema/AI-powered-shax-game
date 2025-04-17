@@ -45,20 +45,3 @@ def isMill(position, board):
 def numOfPieces(board, player):
     return board.count(player)
 
-def check_win_conditions(self):
-        p1, p2 = numOfPieces(self.board, "1"), numOfPieces(self.board, "2")
-        if p1 < 3 or p2 < 3:
-            winner = "Player 2" if p1 < 3 else "Player 1"
-            loser = "Player 1" if p1 < 3 else "Player 2"
-            duration = datetime.now() - self.game_start_time
-            print(f"[Game End] {winner} won against {loser}")
-            print(f"[Game Duration] Total duration: {duration}")
-            self.logger.log_result(
-                game_number=self.game_number,
-                winner=winner,
-                start_time=self.game_start_time,
-                end_time=datetime.now(),
-                ai_config=self.ai_config
-            )
-            self.root.quit()
-
