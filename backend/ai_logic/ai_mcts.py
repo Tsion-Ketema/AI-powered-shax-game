@@ -67,7 +67,8 @@ class Node:
             exploitation = child.total_reward / child.visits
             exploration = exploration_weight * \
                 math.sqrt(math.log(self.visits) / child.visits)
-            uct = exploitation + exploration
+            noise = random.uniform(-0.01, 0.01)
+            uct = exploitation + exploration + noise
             if uct > best_score:
                 best_score = uct
                 best_children = [child]

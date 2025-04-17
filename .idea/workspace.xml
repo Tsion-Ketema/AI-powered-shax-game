@@ -6,9 +6,19 @@
   <component name="ChangeListManager">
     <list default="true" id="bf6f39c3-4b91-4210-919d-ff2742e8c66e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/ai_logic/ai_mcts.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/ai_logic/ai_mcts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/ai_logic/ai_minimax.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/ai_logic/ai_minimax.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/game_logic/movement_logic.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/game_logic/movement_logic.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/game_logic/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/game_logic/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/game_logic/opening_logic.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/game_logic/opening_logic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/game_logic/placement_logic.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/game_logic/placement_logic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/game_logic/removal_logic.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/game_logic/removal_logic.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/ui_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/ui_new.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/game_logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/game_logger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_files/ui_mcts.py" beforeDir="false" afterPath="$PROJECT_DIR$/old_files/ui_mcts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_files/ui_minimax_self_play.py" beforeDir="false" afterPath="$PROJECT_DIR$/old_files/ui_minimax_self_play.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_files/ui_minimax_vs_others.py" beforeDir="false" afterPath="$PROJECT_DIR$/old_files/ui_minimax_vs_others.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/old_files/ui_old.py" beforeDir="false" afterPath="$PROJECT_DIR$/old_files/ui_old.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,6 +36,8 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/backend/game_logic/movement_logic.py" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/frontend/ui_new.py" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/main.py" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProblemsViewState">

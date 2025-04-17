@@ -27,37 +27,6 @@ def opponent_can_form_mill(board_state):
             board_state[pos] = 'x'  # revert
     return False
 
-
-def select_capture_position(board):
-    # Prioritize removing opponent's mills or strategic positions
-    opponent_pieces = [i for i in range(len(board)) if board[i] == '1']
-    best_pos = None
-    best_score = -float('inf')
-
-    for pos in opponent_pieces:
-        # Check if the piece is part of an existing mill
-        in_mill = any(
-            all(board[p] == '1' for p in combo)
-            for combo in mills if pos in combo
-        )
-        # Check if the position is strategic
-        is_strategic = pos in [1, 3, 4, 5, 7, 16, 18, 19, 20, 22]  # Example
-
-        score = 0
-        if in_mill:
-            score += 100
-        if is_strategic:
-            score += 50
-
-        if score > best_score:
-            best_score = score
-            best_pos = pos
-
-    return best_pos if best_pos else random.choice(opponent_pieces)
-
-# Here i completely change the evaluation and the minimax working logic
-
-
 def evaluate(board, player):
     opponent = "2" if player == "1" else "1"
     CAPTURE_BONUS = 100
@@ -116,7 +85,8 @@ def minimax(board, depth, alpha, beta, player, is_maximizing, is_movement_phase)
     opponent = "2" if player == "1" else "1"
     possible_moves = get_possible_moves(board)
     if depth == 0 or not possible_moves:
-        return evaluate(board, player), None
+        noise = random.uniform(-0.01, 0.01)
+        return evaluate(board, player) + noise, None
 
     if is_maximizing:
         # Maximizing player (AI)

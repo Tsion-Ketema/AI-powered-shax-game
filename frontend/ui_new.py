@@ -1,9 +1,11 @@
 import tkinter as tk
+import random
 
 from backend.game_logic.placement_logic import perform_ai_placement
 from backend.game_logic.opening_logic import perform_ai_opening
 from backend.game_logic.removal_logic import perform_ai_removal
 from backend.game_logic.movement_logic import perform_ai_movement
+from backend.ai_logic.ai_minimax import minimax
 from backend.game_logic.utils import *
 
 pos_coords = {
@@ -14,15 +16,15 @@ pos_coords = {
     20: (440, 440), 21: (40, 520), 22: (280, 520), 23: (520, 520)
 }
 
+
 class ShaxGame:
     def __init__(self, root, ai_config, logger, game_number):
         self.root = root
-        self.root.title("Shax game by AI crackers")
+        self.root.title("Shax game by AI-crackers")
         self.canvas = tk.Canvas(root, width=800, height=600, bg="sandy brown")
         self.canvas.pack()
         self.status_label = tk.Label(root, text="", font=("Arial", 12), fg="blue")
         self.status_label.pack()
-
 
         self.logger = logger
         self.game_number = game_number
@@ -61,8 +63,7 @@ class ShaxGame:
         self.blocked = False
         self.player_one_captures = 0
         self.player_two_captures = 0
-        # in ui_new.py
-        self.pos_coords = pos_coords  # set as instance attribute once
+        self.pos_coords = pos_coords
 
     def draw_board_lines(self):
         self.canvas.create_rectangle(40, 40, 520, 520, width=2)
@@ -114,6 +115,8 @@ class ShaxGame:
     def check_win_conditions(self):
         p1, p2 = numOfPieces(self.board, "1"), numOfPieces(self.board, "2")
         if p1 < 3 or p2 < 3:
+            self.game_over = True
+
             winner = "Player 2" if p1 < 3 else "Player 1"
             loser = "Player 1" if p1 < 3 else "Player 2"
             duration = datetime.now() - self.game_start_time
@@ -127,6 +130,32 @@ class ShaxGame:
                 ai_config=self.ai_config
             )
             self.root.quit()
+
+    def ai_forced_move_no_capture(self):
+        moves = get_possible_moves_player(self.board, self.turn)
+        if moves:
+            src, dest = random.choice(moves)
+            self.board[src] = 'x'
+            self.board[dest] = self.turn
+            print(
+                f"Player {self.turn} fallback random move from {src} to {dest}")
+            self.update_board()
+
+            if not get_possible_moves_player(self.board, "2"):
+                print(
+                    f"Player {self.turn} is blocked too. No move can be made.")
+                return
+            evaluation, move = minimax(
+                self.board, self.depth, self.alpha, self.beta, self.turn, True, True)
+            if move is None:
+                print(
+                    f"Player {self.turn} AI is blocked. No move can be made.")
+                return
+            self.update_board()
+            self.check_win_conditions()
+            self.turn = "2" if self.turn == "1" else "1"
+            self.root.after(500, self.ai_move)
+
 
     def ai_place(self):
         perform_ai_placement(self)

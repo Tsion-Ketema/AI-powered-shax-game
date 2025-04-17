@@ -1,51 +1,49 @@
-from datetime import datetime
-from statistics import mean
-import matplotlib.pyplot as plt
 import os
+import matplotlib.pyplot as plt
+from datetime import datetime
+
+
+def normalize_match_type(match_type):
+    parts = [p.strip().upper() for p in match_type.split("vs")]
+    parts.sort()
+    return "_vs_".join(parts)
+
 
 
 class GameLogger:
     def __init__(self, match_type):
-        self.match_type = match_type
+        self.original_match_type = match_type
+        self.folder_name = normalize_match_type(match_type)
         self.results = []
+        self.start_time = None
+        self.end_time = None
 
     def log_result(self, game_number, winner, start_time, end_time, ai_config):
         duration = (end_time - start_time).total_seconds()
         player1_type = ai_config.get("1", "Player 1")
         player2_type = ai_config.get("2", "Player 2")
-        self.results.append(
-            (game_number, player1_type, player2_type, winner, duration))
 
-    def summarize_and_plot(self):
-        total_games = len(self.results)
-        if total_games == 0:
-            return
+        if self.start_time is None:
+            self.start_time = start_time
+        self.end_time = end_time
 
-        p1_wins = sum(1 for _, _, _, winner,
-                      _ in self.results if winner == "Player 1")
-        p2_wins = total_games - p1_wins
+        self.results.append((game_number, player1_type, player2_type, winner, duration))
 
-        print(f"\nMatch Summary: {self.match_type}")
-        print(f"Total Games: {total_games}")
-        print(f"Player 1 Wins: {p1_wins}")
-        print(f"Player 2 Wins: {p2_wins}")
+        self.save_individual_plot(game_number, player1_type, player2_type, winner, duration)
 
-        # Plotting
+    def save_individual_plot(self, game_number, p1_type, p2_type, winner, duration):
+        folder_path = os.path.join("plots", self.folder_name)
+        os.makedirs(folder_path, exist_ok=True)
+
+        # Plot single game result
         plt.figure(figsize=(6, 4))
-        plt.bar(["Player 1", "Player 2"], [
-                p1_wins, p2_wins], color=["blue", "orange"])
-        plt.title(f"Win Count - {self.match_type}")
-        plt.ylabel("Wins")
+        plt.bar([p1_type, p2_type], [1 if winner == "Player 1" else 0, 1 if winner == "Player 2" else 0],
+                color=["blue", "orange"])
+        plt.title(f"Game {game_number}: {p1_type} vs {p2_type}\nWinner: {winner} | Duration: {duration:.1f}s")
+        plt.ylabel("Win")
 
-        # Auto-incrementing filename
-        base_filename = f"{self.match_type.replace(' ', '_').replace('/', '_vs_')}_wins"
-        filename = f"{base_filename}.png"
-        counter = 2
-        while os.path.exists(filename):
-            filename = f"{base_filename}_{counter}.png"
-            counter += 1
-
-        plt.savefig(filename)
+        filename = f"game_{game_number}.png"
+        filepath = os.path.join(folder_path, filename)
+        plt.savefig(filepath)
         plt.close()
-
-        print(f"Plot saved as: {filename}")
+        print(f"[Logger] Saved: {filepath}")

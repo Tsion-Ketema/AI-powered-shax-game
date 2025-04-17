@@ -11,11 +11,13 @@ def perform_ai_placement(game):
     if ai_type in ("mwor", "mwr"):
         use_rules = ai_type == "mwr"
         is_movement_phase = game.phase == "movement"
+        print(f"{current_player} {ai_type} is making the placement here")
         evaluation, move = minimax(
             game.board, game.depth, game.alpha, game.beta,
             current_player, True, is_movement_phase
         )
     elif ai_type == "mcts":
+        print(f"{current_player} {ai_type} is making the placement here")
         move = monte_carlo_tree_search(game.board, current_player, game.phase)
 
     game.board[move] = current_player
@@ -29,8 +31,10 @@ def perform_ai_placement(game):
 
     if game.placement_moves < 24:
         game.turn = "1" if current_player == "2" else "2"
-        if game.ai_config[game.turn] != "human":
-            game.root.after(500, game.ai_place)
+        if game.ai_config[game.turn] == "human":
+            game.canvas.bind("<Button-1>", game.handle_click)
+        else:
+            game.root.after(500, lambda: game.ai_place())
     else:
         game.phase = "opening"
         game.removal_phase = True
@@ -62,6 +66,6 @@ def handle_human_placement(game, pos):
         game.removal_phase = True
         game.turn = game.human_player  # Ensure human gets their turn to remove
         if game.ai_config[game.turn] == "human":
-            game.canvas.bind("<Button-1>", game.handle_click)  # ✅ Allow human to click
-        print("Waiting for human to remove a piece (or 2nd one)...")
+            game.canvas.bind("<Button-1>", game.handle_click)
+        print("Waiting for human to remove a piece")
 

@@ -2,9 +2,11 @@ from backend.ai_logic.ai_minimax import minimax
 from backend.ai_logic.ai_mcts import monte_carlo_tree_search
 from backend.game_logic.utils import *
 from tkinter import messagebox
+import random
 
 
 def perform_ai_movement(game):
+
     current_player = game.turn
     opponent = "2" if current_player == "1" else "1"
     ai_type = game.ai_config[current_player]
@@ -21,25 +23,41 @@ def perform_ai_movement(game):
         game.board[source] = 'x'
         game.board[dest] = current_player
         game.update_board()
-        game.check_win_conditions()
-        game.turn = opponent
-        game.root.after(500, game.ai_move)
+
+        if isMill(dest, game.board):
+            game.removal_phase = True
+            print(f"{current_player} formed a mill")
+            game.turn = current_player  # AI gets to remove
+            game.root.after(500, game.ai_remove)
+        else:
+            print(f"{current_player} moves from {source} to {dest}")
+            game.check_win_conditions()
+            game.turn = opponent
+            game.root.after(500, game.ai_move)
         return
 
-    if ai_type == "human":
+    elif ai_type == "human":
         print("Waiting for human to move...")
         return
 
-    if ai_type == "mwor":
-        evaluation, move = minimax(game.board, game.depth, game.alpha, game.beta, current_player, True, False)
+    elif ai_type == "mwor":
+        evaluation, move = minimax(game.board, game.depth, game.alpha, game.beta, current_player, True, True)
         if move:
             source, dest = move
             game.board[source] = 'x'
             game.board[dest] = current_player
             game.update_board()
-            game.check_win_conditions()
-            game.turn = opponent
-            game.root.after(500, game.ai_move)
+
+            if isMill(dest, game.board):
+                print(f"{current_player} formed a mill")
+                game.removal_phase = True
+                game.turn = current_player  # AI gets to remove
+                game.root.after(500, game.ai_remove)
+            else:
+                game.check_win_conditions()
+                game.turn = opponent
+                print(f"{current_player} makes a move from {source} to {dest}")
+                game.root.after(500, game.ai_move)
         return
 
     def try_form_mill(game, moves, player, opponent):
@@ -167,3 +185,5 @@ def handle_human_movement(game, pos):
 
         game.canvas.delete("highlight")
         game.selected = None
+
+
