@@ -24,7 +24,7 @@ def get_game_config(mode):
         print("Invalid option.")
         exit()
 
-def run_games(ai_config, logger, num_games=1):
+def run_games(ai_config, logger, num_games=10):
     for i in range(num_games):
         print(f"\n=== Game {i + 1} / {num_games} started ===")
         root = tk.Tk()

@@ -91,7 +91,7 @@ def handle_human_removal(game, pos):
 
     game.board[pos] = "x"
     game.player_one_captures += 1
-    print(f"Human removed AI piece at {pos}")
+    print(f"[Human Capture] Player {game.human_player} removed AI piece at {pos}")  # ✅ Debug line
 
     if game.phase == "opening":
         game.opening_count -= 1

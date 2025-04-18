@@ -1,7 +1,7 @@
 import tkinter as tk
 import random
 
-from backend.game_logic.placement_logic import perform_ai_placement
+from backend.game_logic.placement_logic import handle_ai_placement
 from backend.game_logic.opening_logic import perform_ai_opening
 from backend.game_logic.removal_logic import perform_ai_removal
 from backend.game_logic.movement_logic import perform_ai_movement
@@ -33,8 +33,9 @@ class ShaxGame:
         self.draw_board_lines()
         self.draw_positions()
 
-        self.ai_player = "1" if self.ai_config["1"] != "human" else "2"
-        self.human_player = "2" if self.ai_player == "1" else "1"
+        self.human_player = "1" if self.ai_config["1"] == "human" else "2"
+        self.ai_player = "2" if self.human_player == "1" else "1"
+        self.turn = self.human_player
 
         if self.ai_config[self.turn] == "human":
             self.canvas.bind("<Button-1>", self.handle_click)
@@ -49,7 +50,7 @@ class ShaxGame:
     def _init_game_state(self):
         self.board = ["x"] * 24
         self.phase = "placement"
-        self.turn = "1"
+        self.turn = "1" if self.ai_config["1"] != "human" else "2"
         self.placement_moves = 0
         self.selected = None
         self.first_mill = None
@@ -128,7 +129,8 @@ class ShaxGame:
                 end_time=datetime.now(),
                 ai_config=self.ai_config
             )
-            exit()
+            self.root.quit()
+
 
     def ai_forced_move_no_capture(self):
         moves = get_possible_moves_player(self.board, self.turn)
@@ -157,13 +159,15 @@ class ShaxGame:
 
 
     def ai_place(self):
-        perform_ai_placement(self)
+        handle_ai_placement(self)
 
     def ai_opening(self):
         perform_ai_opening(self)
 
+    def ai_remove(self):
+        perform_ai_removal(self)
+
     def ai_move(self):
         perform_ai_movement(self)
 
-    def ai_remove(self):
-        perform_ai_removal(self)
+

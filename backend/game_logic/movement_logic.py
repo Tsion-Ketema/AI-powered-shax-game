@@ -65,6 +65,9 @@ def perform_ai_movement(game):
             game.board[src] = "x"
             game.board[dest] = player
             if isMill(dest, game.board):
+                print(
+                    f"[AI Mill - MWR] Player {player} formed a mill by moving from {src} to {dest}. Preparing to remove.")
+                messagebox.showinfo("Mill Formed", "AI formed a mill! Remove one of opponet pieces.")
                 game.update_board()
                 game.removal_phase = True
                 game.root.after(500, game.ai_remove)
@@ -85,6 +88,9 @@ def perform_ai_movement(game):
                         game.board[src] = "x"
                         game.board[dest] = player
                         if isMill(dest, game.board):
+                            print(
+                                f"[AI Mill - MWR] Player {player} formed a mill by moving from {src} to {dest}. Preparing to remove.")
+                            messagebox.showinfo("Mill Formed", "AI formed a mill! Remove one of opponet pieces.")
                             game.update_board()
                             game.removal_phase = True
                             game.root.after(500, game.ai_remove)
@@ -173,7 +179,7 @@ def handle_human_movement(game, pos):
         else:
             game.board[game.selected] = "x"
             game.board[pos] = player
-            print(f"Human moved from {game.selected} to {pos}")
+            print(f"[Human Move] Player {player} moved from {game.selected} to {pos}")  # <-- Debug print
             game.update_board()
             if isMill(pos, game.board):
                 messagebox.showinfo("Mill Formed", "You formed a mill! Remove one of AI's pieces.")
@@ -185,5 +191,3 @@ def handle_human_movement(game, pos):
 
         game.canvas.delete("highlight")
         game.selected = None
-
-
