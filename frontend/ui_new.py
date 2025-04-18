@@ -5,8 +5,8 @@ from backend.game_logic.placement_logic import perform_ai_placement
 from backend.game_logic.opening_logic import perform_ai_opening
 from backend.game_logic.removal_logic import perform_ai_removal
 from backend.game_logic.movement_logic import perform_ai_movement
-from backend.ai_logic.ai_minimax import minimax
 from backend.game_logic.utils import *
+from backend.ai_logic.ai_minimax import minimax
 
 pos_coords = {
     0: (40, 40), 1: (280, 40), 2: (520, 40), 3: (120, 120), 4: (280, 120),
@@ -15,7 +15,6 @@ pos_coords = {
     15: (200, 360), 16: (280, 360), 17: (360, 360), 18: (120, 440), 19: (280, 440),
     20: (440, 440), 21: (40, 520), 22: (280, 520), 23: (520, 520)
 }
-
 
 class ShaxGame:
     def __init__(self, root, ai_config, logger, game_number):
@@ -26,12 +25,11 @@ class ShaxGame:
         self.status_label = tk.Label(root, text="", font=("Arial", 12), fg="blue")
         self.status_label.pack()
 
+        self.ai_config = ai_config
         self.logger = logger
         self.game_number = game_number
-        self.ai_config = ai_config
 
         self._init_game_state()
-
         self.draw_board_lines()
         self.draw_positions()
 
@@ -43,6 +41,7 @@ class ShaxGame:
         else:
             self.root.after(500, self.ai_place)
 
+        # what is the purpose of update_board here
         self.update_board()
         self.game_start_time = datetime.now()
         print(f"[Game Start] Game started at {self.game_start_time.strftime('%H:%M:%S')}")
@@ -129,7 +128,7 @@ class ShaxGame:
                 end_time=datetime.now(),
                 ai_config=self.ai_config
             )
-            self.root.quit()
+            exit()
 
     def ai_forced_move_no_capture(self):
         moves = get_possible_moves_player(self.board, self.turn)

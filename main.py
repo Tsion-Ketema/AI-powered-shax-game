@@ -15,16 +15,16 @@ def get_game_config(mode):
     if mode == "1":
         return {"1": "mwor", "2": "mcts"}, "MWOR vs MCTS"
     elif mode == "2":
-        return {"1": "mwr", "2": "mcts"}, "MWR vs MCTS"
+        return {"1": "mcts", "2": "mwr"}, "MWR vs MCTS"
     elif mode == "3":
-        return {"1": "mwr", "2": "human"}, "MWR vs Human"
+        return {"1": "human", "2": "mwr"}, "MWR vs Human"
     elif mode == "4":
         return {"1": "mwr", "2": "mwr"}, "MWR vs MWR"
     else:
         print("Invalid option.")
         exit()
 
-def run_games(ai_config, logger, num_games=5):
+def run_games(ai_config, logger, num_games=1):
     for i in range(num_games):
         print(f"\n=== Game {i + 1} / {num_games} started ===")
         root = tk.Tk()
