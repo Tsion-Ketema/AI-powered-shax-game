@@ -24,7 +24,7 @@ def perform_ai_removal(game):
                 game.phase = "movement"
             else:
                 game.removal_phase = True
-                game.turn = opponent
+        game.turn = opponent
 
         # After removal, decide who plays next
         if game.ai_config[game.turn] == "human":
@@ -103,11 +103,11 @@ def handle_human_removal(game, pos):
         game.removal_phase = False
         game.turn = game.ai_player
         game.root.after(500, game.ai_move)
-    else:
+    elif game.phase =="opening" and game.opening_count!=0:
         game.removal_phase = True
         game.turn = game.ai_player
-        if game.ai_config[game.turn] == "human":
-            print("Waiting for human to remove a piece.")
-            game.canvas.bind("<Button-1>", game.handle_click)
-        else:
-            game.root.after(500, game.ai_remove)
+        game.root.after(500, game.ai_remove)
+    else:
+        game.turn = game.ai_player
+        game.removal_phase = False
+        game.root.after(500, game.ai_move)

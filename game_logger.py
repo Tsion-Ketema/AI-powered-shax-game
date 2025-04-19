@@ -14,18 +14,13 @@ class GameLogger:
         self.game_start_time = datetime.now()
         self.end_time = None
 
-    def log_result(self, game_number, winner, start_time, end_time, ai_config):
-        duration = datetime.now() - self.game_start_time
+    def log_result(self, game_number, winner, duration, ai_config):
         player1_type = ai_config.get("1", "Player 1")
         player2_type = ai_config.get("2", "Player 2")
 
-        if self.game_start_time is None:
-            self.start_time = start_time
-        self.end_time = end_time
-
         self.results.append((game_number, player1_type, player2_type, winner, duration))
 
-        self.save_individual_plot(game_number, player1_type, player2_type, winner, duration)
+       # self.save_individual_plot(game_number, player1_type, player2_type, winner, duration)
 
     def save_individual_plot(self, game_number, p1_type, p2_type, winner, duration):
         folder_path = os.path.join("plots", self.folder_name)
@@ -47,3 +42,48 @@ class GameLogger:
         plt.savefig(filepath)
         plt.close()
         print(f"[Logger] Saved: {filepath}")
+
+    def plot_game_analysis(self):
+        folder_path = os.path.join("plots", self.folder_name)
+
+        if not self.results:
+            print("No game results to analyze.")
+            return
+
+        # Extract data
+        game_numbers = [r[0] for r in self.results]
+        player1_type = [r[1] for r in self.results]
+        player2_type = [r[2] for r in self.results]
+        winners = [r[3] for r in self.results]
+        durations = [r[4].total_seconds() for r in self.results]  # duration in seconds
+        print(durations)
+
+        # Count wins
+        win_counts = {}
+        for winner in winners:
+            if winner not in win_counts:
+                win_counts[winner] = 0
+            win_counts[winner] += 1
+
+        # Plot win counts
+        plt.figure(figsize=(10, 5))
+        plt.subplot(1, 2, 1)
+        plt.bar(win_counts.keys(), win_counts.values())
+        plt.title('Number of Wins per Player')
+        plt.xlabel('Winner')
+        plt.ylabel('Wins')
+        plt.grid(axis='y')
+
+        # Plot game durations
+        plt.subplot(1, 2, 2)
+        plt.plot(game_numbers, durations, marker='o')
+        plt.title('Game Duration Over Time')
+        plt.xlabel('Game Number')
+        plt.ylabel('Duration (seconds)')
+        plt.grid(True)
+
+        plt.tight_layout()
+
+        plt.savefig(folder_path)
+        print(f"Plot saved")
+

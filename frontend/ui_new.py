@@ -86,7 +86,7 @@ class ShaxGame:
         for pos, (x, y) in pos_coords.items():
             piece = self.board[pos]
             color = "green" if piece == "1" else "yellow" if piece == "2" else "white"
-            self.canvas.create_text(x, y - 25, text=str(pos), fill="black")
+            #self.canvas.create_text(x, y - 25, text=str(pos), fill="black")
             self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                     fill=color, outline="black", width=2, tag="piece")
         self.update_status()
@@ -125,8 +125,7 @@ class ShaxGame:
             self.logger.log_result(
                 game_number=self.game_number,
                 winner=winner,
-                start_time=self.game_start_time,
-                end_time=datetime.now(),
+                duration=duration,
                 ai_config=self.ai_config
             )
             self.root.quit()
@@ -134,6 +133,7 @@ class ShaxGame:
 
     def ai_forced_move_no_capture(self):
         moves = get_possible_moves_player(self.board, self.turn)
+        opponent = "2" if self.turn=="1" else "1"
         if moves:
             src, dest = random.choice(moves)
             self.board[src] = 'x'
@@ -142,7 +142,7 @@ class ShaxGame:
                 f"Player {self.turn} fallback random move from {src} to {dest}")
             self.update_board()
 
-            if not get_possible_moves_player(self.board, "2"):
+            if not get_possible_moves_player(self.board, self.turn):
                 print(
                     f"Player {self.turn} is blocked too. No move can be made.")
                 return

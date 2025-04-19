@@ -67,8 +67,11 @@ def perform_ai_movement(game):
             if isMill(dest, game.board):
                 print(
                     f"[AI Mill - MWR] Player {player} formed a mill by moving from {src} to {dest}. Preparing to remove.")
-                messagebox.showinfo("Mill Formed", "AI formed a mill! Remove one of opponet pieces.")
                 game.update_board()
+                if game.ai_config[opponent]=="human":
+                    messagebox.showinfo("Mill Formed", "AI formed a mill! Remove one of opponet pieces.")
+                else:
+                    print("Mill Formed AI formed a mill! Remove one of opponet pieces.")
                 game.removal_phase = True
                 game.root.after(500, game.ai_remove)
                 return True
@@ -90,11 +93,15 @@ def perform_ai_movement(game):
                         if isMill(dest, game.board):
                             print(
                                 f"[AI Mill - MWR] Player {player} formed a mill by moving from {src} to {dest}. Preparing to remove.")
-                            messagebox.showinfo("Mill Formed", "AI formed a mill! Remove one of opponet pieces.")
                             game.update_board()
+                            if game.ai_config[opponent]=="human":
+                                messagebox.showinfo("Mill Formed", "AI formed a mill! Remove one of opponet pieces.")
+                            else:
+                                print("Mill Formed AI formed a mill! Remove one of opponet pieces.")
                             game.removal_phase = True
                             game.root.after(500, game.ai_remove)
                             return True
+                        print(f"AI player {game.turn} moved from {source} to {dest} block back and forth mill")
                         game.update_board()
                         game.turn = opponent
                         game.root.after(500, game.ai_move)
@@ -122,10 +129,53 @@ def perform_ai_movement(game):
             if blocked:
                 game.board[src] = "x"
                 game.board[dest] = player
+                print(f"AI player {game.turn} moved from {source} to {dest} disrupt opponent double threat")
                 game.update_board()
                 game.turn = opponent
                 game.root.after(500, game.ai_move)
                 return True
+        return False
+    def create_back_and_forth(game, moves, player, opponent):
+        for src, dest in moves:
+                if game.board[src] == player and game.board[dest] == "x":
+                    for mill in mills:
+                        if src in mill and all(game.board[p] == player for p in mill):
+                            # Safe to vacate unless it forms a mill
+                            if any(game.board[adj] == opponent for adj in adjacentLocations(src)) and all(game.board[adj] != "x" for adj in adjacentLocations(src)):
+                                continue  # Not safe unless it forms a mill
+                            else:
+                                empty_space = []
+                                safe_target = []
+                                for i in adjacentLocations(src):
+                                    if game.board[i] == "x":
+                                        empty_space.append(i)
+                                for pos in empty_space:
+                                    if any(game.board[adj] == opponent for adj in adjacentLocations(pos)):
+                                        continue
+                                    else:
+                                        safe_target.append(pos)
+                                if not safe_target:
+                                    game.board[src] = "x"
+                                    game.board[dest] = player
+                                    print(
+                                        f"Player {player} moved from {src} to {dest} to create back and forth mill. no safe target")
+                                else:
+                                    game.board[src] = "x"
+                                    game.board[safe_target[0]] = player
+                                if isMill(dest, game.board):
+                                    print(
+                                        f"Player {player} moved from {src} to {dest} to create back and forth mill. safe target")
+                                    game.update_board()
+                                    print(
+                                        f"Player {player} formed a mill! It will remove one of opponent piece.")
+                                    game.removal_phase = True
+                                    game.root.after(500, game.ai_remove)
+                                game.update_board()
+                                game.check_win_conditions()
+                                game.turn = opponent
+                                game.root.after(500, game.ai_move)
+
+                                return True
         return False
 
     def fallback_minimax_move(game, moves, player, opponent):
@@ -134,6 +184,7 @@ def perform_ai_movement(game):
             source, dest = move
             game.board[source] = 'x'
             game.board[dest] = player
+            print(f"AI player {game.turn} moved from {source} to {dest} fallback minimax")
             game.update_board()
             game.check_win_conditions()
             game.turn = opponent
@@ -144,8 +195,10 @@ def perform_ai_movement(game):
     if ai_type == "mwr":
         for strategy in [
             try_form_mill,
+            create_back_and_forth,
             block_backforth_threat,
             disrupt_opponent_double_threat
+            
         ]:
             if strategy(game, moves, current_player, opponent):
                 return
