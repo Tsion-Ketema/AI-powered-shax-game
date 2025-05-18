@@ -16,9 +16,8 @@ To develop an intelligent Shax-playing agent that:
 - **MWR**: Minimax with domain-specific heuristics (mill blocking, double-threat creation, loop detection, etc.)
 
 ## 🖥️ How to Run
+Run :- python main.py
 
-```bash
-python main.py
 You’ll be prompted to select one of four modes:
 
 MWOR vs MCTS
@@ -37,3 +36,8 @@ Three AI strategies with swappable configurations
 Game result logging and summary plotting
 
 Modular design for easy maintenance and expansion
+
+References
+Jama Musse Jama (1997), C++ implementation of Shax
+
+u/theDarkPrincexXR – Online Shax Playground
