@@ -86,7 +86,7 @@ class ShaxGame:
         for pos, (x, y) in pos_coords.items():
             piece = self.board[pos]
             color = "green" if piece == "1" else "yellow" if piece == "2" else "white"
-            #self.canvas.create_text(x, y - 25, text=str(pos), fill="black")
+            self.canvas.create_text(x, y - 25, text=str(pos), fill="black")
             self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                     fill=color, outline="black", width=2, tag="piece")
         self.update_status()

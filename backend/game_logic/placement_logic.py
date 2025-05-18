@@ -54,7 +54,6 @@ def handle_ai_placement(game):
             game.root.after(500, game.ai_remove)
 
 
-
 def handle_human_placement(game, pos):
     if game.ai_config[game.turn] != "human":
         print("It's not the human's turn to place.")

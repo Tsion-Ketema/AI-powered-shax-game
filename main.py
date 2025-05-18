@@ -19,7 +19,7 @@ def get_game_config(mode):
     elif mode == "3":
         return {"1": "human", "2": "mwr"}, "MWR vs Human"
     elif mode == "4":
-        return {"1": "mwr", "2": "mwor"}, "MWR vs MWOR"
+        return {"1": "mwor", "2": "mwr"}, "MWR vs MWOR"
     else:
         print("Invalid option.")
         exit()
