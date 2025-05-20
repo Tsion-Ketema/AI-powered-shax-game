@@ -1,6 +1,7 @@
 from backend.game_logic.utils import *
 import random
 
+
 def apply_place(board, move, player):
     new_board = board[:]
     new_board[move] = player
@@ -26,6 +27,7 @@ def opponent_can_form_mill(board_state):
                 return True
             board_state[pos] = 'x'  # revert
     return False
+
 
 def evaluate(board, player):
     opponent = "2" if player == "1" else "1"

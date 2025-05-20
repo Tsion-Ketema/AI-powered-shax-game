@@ -1,0 +1,82 @@
+[
+  {
+    "game_number": 1,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 2",
+    "duration": "0:01:35.005133",
+    "match_name": "Human vs MWR"
+  },
+  {
+    "game_number": 2,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 2",
+    "duration": "0:02:12.095237",
+    "match_name": "Human vs MWR"
+  },
+  {
+    "game_number": 3,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 2",
+    "duration": "0:12:01.878439",
+    "match_name": "Human vs MWR"
+  },
+  {
+    "game_number": 4,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 2",
+    "duration": "0:03:15.287602",
+    "match_name": "Human vs MWR"
+  },
+  {
+    "game_number": 5,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 1",
+    "duration": "0:03:25.753853",
+    "match_name": "Human vs MWR"
+  },
+  {
+    "game_number": 6,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 2",
+    "duration": "0:02:59.917547",
+    "match_name": "Human vs MWR"
+  },
+  {
+    "game_number": 7,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 2",
+    "duration": "0:01:36.660286",
+    "match_name": "Human vs MWR"
+  },
+  {
+    "game_number": 8,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 2",
+    "duration": "0:43:58.830595",
+    "match_name": "Human vs MWR"
+  },
+  {
+    "game_number": 9,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 2",
+    "duration": "0:01:20.838264",
+    "match_name": "Human vs MWR"
+  },
+  {
+    "game_number": 10,
+    "player1_type": "human",
+    "player2_type": "mwr",
+    "winner": "Player 2",
+    "duration": "0:02:33.323899",
+    "match_name": "Human vs MWR"
+  }
+]

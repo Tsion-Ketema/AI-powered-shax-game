@@ -2,69 +2,97 @@ from tkinter import messagebox
 from backend.ai_logic.ai_mcts import monte_carlo_tree_search
 from backend.game_logic.utils import *
 
+# Handles AI's piece removal after forming a mill
+
+
 def perform_ai_removal(game):
     player = game.turn
     opponent = "2" if player == "1" else "1"
     ai_type = game.ai_config[player]
 
+    # Helper function to remove a piece from the board and update the game state
     def remove_piece(pos, reason):
         game.board[pos] = "x"
+
+        # Track capture count
         if player == "1":
             game.player_one_captures += 1
         else:
             game.player_two_captures += 1
+
         game.update_board()
         game.check_win_conditions()
         print(f"{pos} removed by {reason}")
-        game.removal_phase = False
 
+        # Update game phase after removal
+        game.removal_phase = False
         if game.phase == "opening":
             game.opening_count -= 1
             if game.opening_count == 0:
                 game.phase = "movement"
             else:
                 game.removal_phase = True
+
+        # Switch turns
         game.turn = opponent
 
-        # After removal, decide who plays next
+        # Decide next move: either wait for human input or schedule next AI action
         if game.ai_config[game.turn] == "human":
             game.canvas.bind("<Button-1>", game.handle_click)
         else:
-            game.root.after(500, game.ai_move if game.phase == "movement" else game.ai_remove)
+            game.root.after(500, game.ai_move if game.phase ==
+                            "movement" else game.ai_remove)
 
-    # MCTS AI logic
+    # --- AI logic branches by type ---
+
+    # MCTS: use tree search to choose which piece to remove
     if ai_type == "mcts":
-        move = monte_carlo_tree_search(game.board, player, "removal" if game.removal_phase else game.phase)
+        move = monte_carlo_tree_search(
+            game.board, player, "removal" if game.removal_phase else game.phase)
         remove_piece(move, "MCTS removal")
         return
 
-    # Minimax without rules
+    # MWOR: plain minimax (fallback removal - just remove the first available piece)
     if ai_type == "mwor":
         for pos, piece in enumerate(game.board):
             if piece == opponent:
                 remove_piece(pos, "fallback removal")
                 return
 
-    # Minimax with rules
+    # MWR: Minimax with Rules – rule-based decision-making
     if ai_type == "mwr":
         positions = [i for i, p in enumerate(game.board) if p == opponent]
 
+        # During opening phase – prioritize strategic removals
         if game.phase == "opening":
+            # Try to remove a piece blocking a potential mill
             for pos in positions:
-                if any(pos in mill and all(game.board[p] in [player, "x"] for p in mill) and
-                       any(game.board[adj] == player for adj in adjacentLocations(pos)) for mill in mills):
+                if any(
+                    pos in mill and
+                    all(game.board[p] in [player, "x"] for p in mill) and
+                    any(game.board[adj] ==
+                        player for adj in adjacentLocations(pos))
+                    for mill in mills
+                ):
                     remove_piece(pos, "opening mill block")
                     return
 
+            # Try to disrupt an almost-formed mill
             for pos in positions:
-                if any(pos in mill and sum(game.board[p] == opponent for p in mill) == 2 and
-                       sum(game.board[p] == "x" for p in mill) == 1 for mill in mills):
+                if any(
+                    pos in mill and
+                    sum(game.board[p] == opponent for p in mill) == 2 and
+                    sum(game.board[p] == "x" for p in mill) == 1
+                    for mill in mills
+                ):
                     remove_piece(pos, "disrupt mill")
                     return
 
+            # If no rules apply, fallback to first available piece
             remove_piece(positions[0], "fallback opening")
             return
 
+        # During movement phase – prevent opponent back-and-forth loops
         elif game.phase == "movement":
             for mill in mills:
                 hp = [p for p in mill if game.board[p] == opponent]
@@ -75,35 +103,44 @@ def perform_ai_removal(game):
                             remove_piece(adj, "back-and-forth prevention")
                             return
 
+            # Fallback if no strategic removal found
             remove_piece(positions[0], "fallback movement")
 
 
+# Handles human-initiated removal after forming a mill
 def handle_human_removal(game, pos):
     print("Waiting for human to remove a piece...")
 
+    # Ensure it's actually the human's turn
     if game.ai_config[game.turn] != "human":
         print("[ERROR] Not human's removal turn.")
         return
 
+    # Ensure the selected piece belongs to the AI player
     if game.board[pos] != game.ai_player:
-        messagebox.showinfo("Invalid Selection", "Select an AI piece to remove.")
+        messagebox.showinfo("Invalid Selection",
+                            "Select an AI piece to remove.")
         return
 
+    # Perform the removal
     game.board[pos] = "x"
     game.player_one_captures += 1
-    print(f"[Human Capture] Player {game.human_player} removed AI piece at {pos}")  # ✅ Debug line
+    print(
+        f"[Human Capture] Player {game.human_player} removed AI piece at {pos}")
 
+    # Update phase if in opening
     if game.phase == "opening":
         game.opening_count -= 1
 
     game.update_board()
 
+    # Decide next phase or removal
     if game.phase == "opening" and game.opening_count == 0:
         game.phase = "movement"
         game.removal_phase = False
         game.turn = game.ai_player
         game.root.after(500, game.ai_move)
-    elif game.phase =="opening" and game.opening_count!=0:
+    elif game.phase == "opening" and game.opening_count != 0:
         game.removal_phase = True
         game.turn = game.ai_player
         game.root.after(500, game.ai_remove)

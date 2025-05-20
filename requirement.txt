@@ -1,0 +1,2 @@
+tkinter for linux:- sudo apt-get install python3-tk
+matplotlib

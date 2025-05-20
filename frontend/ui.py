@@ -1,6 +1,7 @@
 import tkinter as tk
 import random
 
+# Import game phase logic and utility functions
 from backend.game_logic.placement_logic import handle_ai_placement
 from backend.game_logic.opening_logic import perform_ai_opening
 from backend.game_logic.removal_logic import perform_ai_removal
@@ -8,6 +9,7 @@ from backend.game_logic.movement_logic import perform_ai_movement
 from backend.game_logic.utils import *
 from backend.ai_logic.ai_minimax import minimax
 
+# Coordinates for each board position (0–23)
 pos_coords = {
     0: (40, 40), 1: (280, 40), 2: (520, 40), 3: (120, 120), 4: (280, 120),
     5: (440, 120), 6: (200, 200), 7: (280, 200), 8: (360, 200), 9: (40, 280),
@@ -16,38 +18,48 @@ pos_coords = {
     20: (440, 440), 21: (40, 520), 22: (280, 520), 23: (520, 520)
 }
 
+
 class ShaxGame:
     def __init__(self, root, ai_config, logger, game_number):
         self.root = root
         self.root.title("Shax game by AI-crackers")
+
+        # Create canvas and status label
         self.canvas = tk.Canvas(root, width=800, height=600, bg="sandy brown")
         self.canvas.pack()
-        self.status_label = tk.Label(root, text="", font=("Arial", 12), fg="blue")
+        self.status_label = tk.Label(
+            root, text="", font=("Arial", 12), fg="blue")
         self.status_label.pack()
 
+        # Store game config and logging references
         self.ai_config = ai_config
         self.logger = logger
         self.game_number = game_number
 
+        # Initialize state and board UI
         self._init_game_state()
         self.draw_board_lines()
         self.draw_positions()
 
+        # Determine which player is human or AI
         self.human_player = "1" if self.ai_config["1"] == "human" else "2"
         self.ai_player = "2" if self.human_player == "1" else "1"
         self.turn = self.human_player
 
+        # Bind human input or let AI start
         if self.ai_config[self.turn] == "human":
             self.canvas.bind("<Button-1>", self.handle_click)
         else:
             self.root.after(500, self.ai_place)
 
-        # what is the purpose of update_board here
+        # Draw board state and log start time
         self.update_board()
         self.game_start_time = datetime.now()
-        print(f"[Game Start] Game started at {self.game_start_time.strftime('%H:%M:%S')}")
+        print(
+            f"[Game Start] Game started at {self.game_start_time.strftime('%H:%M:%S')}")
 
     def _init_game_state(self):
+        # Initialize game state variables
         self.board = ["x"] * 24
         self.phase = "placement"
         self.turn = "1" if self.ai_config["1"] != "human" else "2"
@@ -66,6 +78,7 @@ class ShaxGame:
         self.pos_coords = pos_coords
 
     def draw_board_lines(self):
+        # Draw the lines of the Shax board
         self.canvas.create_rectangle(40, 40, 520, 520, width=2)
         self.canvas.create_rectangle(120, 120, 440, 440, width=2)
         self.canvas.create_rectangle(200, 200, 360, 360, width=2)
@@ -75,12 +88,14 @@ class ShaxGame:
         self.canvas.create_line(40, 280, 200, 280, width=2)
 
     def draw_positions(self):
+        # Draw the 24 positions (nodes) on the board
         radius = 12
         for pos, (x, y) in pos_coords.items():
             self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                     fill="white", outline="black", width=2)
 
     def update_board(self):
+        # Redraw board with current piece positions and status
         self.canvas.delete("piece")
         radius = 12
         for pos, (x, y) in pos_coords.items():
@@ -93,12 +108,14 @@ class ShaxGame:
         self.root.update()
 
     def update_status(self):
+        # Update the status label (turn, captures, etc.)
         p1 = numOfPieces(self.board, "1")
         p2 = numOfPieces(self.board, "2")
         self.status_label.config(text=f"Turn: player {self.turn}  |  Player 1 Pieces: {p1}  |  Player 2 Pieces: {p2}  "
                                       f"|  P1 Captures: {self.player_one_captures}  |  P2 Captures: {self.player_two_captures}  | Phase: {self.phase}")
 
     def handle_click(self, event):
+        # Handle click based on current phase
         for pos, (x, y) in pos_coords.items():
             if (event.x - x) ** 2 + (event.y - y) ** 2 <= 15 ** 2:
                 if self.phase == "placement":
@@ -113,15 +130,16 @@ class ShaxGame:
                 return
 
     def check_win_conditions(self):
+        # Check for game-ending condition (less than 3 pieces)
         p1, p2 = numOfPieces(self.board, "1"), numOfPieces(self.board, "2")
         if p1 < 3 or p2 < 3:
             self.game_over = True
-
             winner = "Player 2" if p1 < 3 else "Player 1"
             loser = "Player 1" if p1 < 3 else "Player 2"
             duration = datetime.now() - self.game_start_time
             print(f"[Game End] {winner} won against {loser}")
             print(f"[Game Duration] Total duration: {duration}")
+
             self.logger.log_result(
                 game_number=self.game_number,
                 winner=winner,
@@ -130,10 +148,11 @@ class ShaxGame:
             )
             self.root.quit()
 
-
     def ai_forced_move_no_capture(self):
+        # When AI is stuck or no capture is made, fallback move is triggered
         moves = get_possible_moves_player(self.board, self.turn)
-        opponent = "2" if self.turn=="1" else "1"
+        opponent = "2" if self.turn == "1" else "1"
+
         if moves:
             src, dest = random.choice(moves)
             self.board[src] = 'x'
@@ -142,22 +161,25 @@ class ShaxGame:
                 f"Player {self.turn} fallback random move from {src} to {dest}")
             self.update_board()
 
+            # After move, check for next AI decision
             if not get_possible_moves_player(self.board, self.turn):
                 print(
                     f"Player {self.turn} is blocked too. No move can be made.")
                 return
+
             evaluation, move = minimax(
                 self.board, self.depth, self.alpha, self.beta, self.turn, True, True)
             if move is None:
                 print(
                     f"Player {self.turn} AI is blocked. No move can be made.")
                 return
+
             self.update_board()
             self.check_win_conditions()
             self.turn = "2" if self.turn == "1" else "1"
             self.root.after(500, self.ai_move)
 
-
+    # AI action routing functions
     def ai_place(self):
         handle_ai_placement(self)
 
@@ -169,5 +191,3 @@ class ShaxGame:
 
     def ai_move(self):
         perform_ai_movement(self)
-
-

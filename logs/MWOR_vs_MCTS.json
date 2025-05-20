@@ -1,0 +1,82 @@
+[
+  {
+    "game_number": 1,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 1",
+    "duration": "0:03:03.579926",
+    "match_name": "MWOR vs MCTS"
+  },
+  {
+    "game_number": 2,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 1",
+    "duration": "0:02:01.918281",
+    "match_name": "MWOR vs MCTS"
+  },
+  {
+    "game_number": 3,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 1",
+    "duration": "0:03:05.551736",
+    "match_name": "MWOR vs MCTS"
+  },
+  {
+    "game_number": 4,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 2",
+    "duration": "0:02:01.195455",
+    "match_name": "MWOR vs MCTS"
+  },
+  {
+    "game_number": 5,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 1",
+    "duration": "0:01:44.998846",
+    "match_name": "MWOR vs MCTS"
+  },
+  {
+    "game_number": 6,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 1",
+    "duration": "0:03:13.551597",
+    "match_name": "MWOR vs MCTS"
+  },
+  {
+    "game_number": 7,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 1",
+    "duration": "0:01:19.921672",
+    "match_name": "MWOR vs MCTS"
+  },
+  {
+    "game_number": 8,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 1",
+    "duration": "0:05:17.192579",
+    "match_name": "MWOR vs MCTS"
+  },
+  {
+    "game_number": 9,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 1",
+    "duration": "0:05:50.392209",
+    "match_name": "MWOR vs MCTS"
+  },
+  {
+    "game_number": 10,
+    "player1_type": "mwor",
+    "player2_type": "mcts",
+    "winner": "Player 1",
+    "duration": "0:02:07.997728",
+    "match_name": "MWOR vs MCTS"
+  }
+]
