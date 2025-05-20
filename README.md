@@ -1,43 +1,43 @@
-This is an AI powered Shax game, which can be played in a board between two players in a deterministic environment, This project applies techniques such as Minimax and Alpha-Beta Pruning.
+# AI-Powered Shax (Shah) Game
 
-# Shax Game Rules
+A GUI-based implementation of **Shax**, a traditional Somali two-player strategy game. This project supports both Human vs AI and AI vs AI gameplay using three AI strategies: **Minimax**, **Monte Carlo Tree Search (MCTS)**, and a **Heuristic-Enhanced Minimax**.
 
-## Overview
+## 🎯 Project Objective
 
-Shax is a two-player strategy board game played on a 24-position board. Each player has 12 pieces. The game consists of four distinct phases: Placement, Opening, Movement, and Capture.
+To develop an intelligent Shax-playing agent that:
+- Fully follows the traditional rules of the game,
+- Plays competitively against human and AI opponents,
+- Allows performance comparison between different AI strategies.
 
-## Game Phases
+## 🧠 AI Strategies
 
-### 1. Placement Phase
+- **MWOR**: Minimax with alpha-beta pruning (no additional rules)  
+- **MCTS**: Monte Carlo Tree Search with UCT and 1,000 simulations  
+- **MWR**: Minimax with domain-specific heuristics (mill blocking, double-threat creation, loop detection, etc.)
 
-- Players take turns placing their pieces on the board.
-- The goal is to form a **mill** (three pieces in a row).
-- Possible conditions:
-  1. One player forms one or more mills.
-  2. Both players form mills.
-  3. No mills are formed.
+## 🖥️ How to Run
+Run :- python main.py
 
-### 2. Opening Phase
+You’ll be prompted to select one of four modes:
 
-- Players remove one opponent's piece, turn by turn, based on the Placement phase outcome:
-  1. If only one player forms a mill, they remove an opponent's piece first.
-  2. If both form mills, the first player to form a mill removes a piece first.
-  3. If no mills were formed, the second player of the Placement phase starts.
+MWOR vs MCTS
 
-### 3. Movement Phase
+MWR vs MCTS
 
-- Players move pieces to adjacent positions.
-- Diagonal moves and jumping are not allowed.
-- If a player forms a mill, they remove an opponent's piece.
-- If a player is blocked, the opponent may move their own pieces strategically to unblock them.
+Human vs MWR
 
-### 4. Capture Phase
+MWR vs MWOR
 
-- The game ends when a player has only **two pieces left** or **gives up**.
+📦 Features
+Simple and intuitive Tkinter GUI
 
-## Winning Conditions
+Three AI strategies with swappable configurations
 
-- A player wins when their opponent is reduced to two pieces.
-- A player wins if their opponent concedes the game.
+Game result logging and summary plotting
 
-Enjoy playing Shax!
+Modular design for easy maintenance and expansion
+
+References
+Jama Musse Jama (1997), C++ implementation of Shax
+
+u/theDarkPrincexXR – Online Shax Playground
